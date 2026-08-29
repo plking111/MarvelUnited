@@ -1,0 +1,94 @@
+{
+    "books":  [
+                  {
+                      "pages":  12,
+                      "name":  "漫威联合：基础版",
+                      "id":  "base",
+                      "available":  true
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：X战警",
+                      "id":  "xmen",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：神奇四侠",
+                      "id":  "fantastic4",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：灭霸",
+                      "id":  "thanos",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：无限手套",
+                      "id":  "gauntlet",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：多元宇宙",
+                      "id":  "multiverse",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：蜘蛛侠宇宙",
+                      "id":  "spiderverse",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：诸界之战",
+                      "id":  "asgard",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：死侍与亡灵",
+                      "id":  "deadpool",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：内战",
+                      "id":  "civilwar",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：复仇者集结",
+                      "id":  "avengers",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：银河护卫队",
+                      "id":  "guardians",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：至尊魔法师",
+                      "id":  "doctorstrange",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：毒液",
+                      "id":  "venom",
+                      "available":  false
+                  },
+                  {
+                      "pages":  0,
+                      "name":  "漫威联合：征服者康",
+                      "id":  "kang",
+                      "available":  false
+                  }
+              ]
+}

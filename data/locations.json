@@ -1,0 +1,68 @@
+{
+  "locations": {
+    "central_park": {
+      "expansion": "基础盒",
+      "name": "中央公园",
+      "slots": 5,
+      "initial": ["civ", "civ", "thug", "thug", null],
+      "image": "res://assets/cards/locations/central_park.png",
+      "end_turn": { "type": "move_tokens", "text": "回合结束：分批次将此地点最多 2 名平民或暴徒（任意组合），逐个移动到任意有空位的地点。" }
+    },
+    "avengers_tower": {
+      "expansion": "基础盒",
+      "name": "复仇者大厦",
+      "slots": 3,
+      "initial": ["civ", null, null],
+      "image": "res://assets/cards/locations/avengers_tower.png",
+      "end_turn": { "type": "search_top", "text": "回合结束：你可以从你的牌组搜寻 1 张卡牌，洗混牌组后，把这张牌放到牌组顶部。" }
+    },
+    "avengers_mansion": {
+      "expansion": "基础盒",
+      "name": "复仇者庄园",
+      "slots": 3,
+      "initial": ["civ", null, null],
+      "image": "res://assets/cards/locations/avengers_mansion.png",
+      "end_turn": { "type": "draw_to_3", "text": "回合结束：抽牌，直到你的手牌达到 3 张。" }
+    },
+    "stark_lab": {
+      "expansion": "基础盒",
+      "name": "斯塔克实验室",
+      "slots": 4,
+      "initial": ["civ", "thug", "thug", null],
+      "image": "res://assets/cards/locations/stark_lab.png",
+      "end_turn": { "type": "swap_story", "text": "回合结束：拿一张手牌，和故事情节里的一张卡牌做交换。" }
+    },
+    "times_square": {
+      "expansion": "基础盒",
+      "name": "时代广场",
+      "slots": 5,
+      "initial": ["civ", "civ", "thug", null, null],
+      "image": "res://assets/cards/locations/times_square.png",
+      "end_turn": { "type": "rescue_civ", "text": "回合结束：你可以营救本地点的 1 名平民。" }
+    },
+    "helicarrier": {
+      "expansion": "基础盒",
+      "name": "神盾局天空母舰",
+      "slots": 4,
+      "initial": ["civ", "thug", "thug", null],
+      "image": "res://assets/cards/locations/helicarrier.png",
+      "end_turn": { "type": "move_anywhere", "text": "回合结束：你可以移动到任意一个地点。" }
+    },
+    "shield_hq": {
+      "expansion": "基础盒",
+      "name": "神盾局总部",
+      "slots": 4,
+      "initial": ["civ", "thug", null, null],
+      "image": "res://assets/cards/locations/shield_hq.png",
+      "end_turn": { "type": "remove_crisis", "text": "回合结束：将一张手牌放到自己牌库底部，移除场上任意一处的 1 个危机指示物。" }
+    },
+    "nypd_hq": {
+      "expansion": "基础盒",
+      "name": "纽约警察局总部",
+      "slots": 4,
+      "initial": ["civ", "civ", "thug", null],
+      "image": "res://assets/cards/locations/nypd_hq.png",
+      "end_turn": { "type": "defeat_thug", "text": "回合结束：可以消灭本地点的 1 个暴徒。" }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+[gd_resource type="SystemFont" load_steps=2 format=3]
+
+[sub_resource type="SystemFont" id="SystemFont_cjk"]
+font_names = PackedStringArray("Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "Noto Sans CJK SC", "Source Han Sans SC", "WenQuanYi Micro Hei")
+antialiasing = 1
+
+[resource]
+font_names = Array[String](["Microsoft YaHei", "Microsoft YaHei UI", "SimHei", "Noto Sans CJK SC", "Source Han Sans SC", "WenQuanYi Micro Hei"])
+antialiasing = 1

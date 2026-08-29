@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="16" fill="#1a1a2e"/>
+  <circle cx="64" cy="58" r="34" fill="#e62429"/>
+  <path d="M50 40 L78 40 L74 52 L84 52 L78 66 L88 66 L76 92 L52 92 L40 66 L50 66 L44 52 L54 52 Z" fill="#ffffff"/>
+  <rect x="34" y="96" width="60" height="8" rx="4" fill="#f5c518"/>
+  <text x="64" y="122" font-size="12" fill="#ffffff" text-anchor="middle" font-family="sans-serif">漫威联合</text>
+</svg>

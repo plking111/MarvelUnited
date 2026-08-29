@@ -1,0 +1,102 @@
+{
+  "cap": {
+    "name": "美国队长",
+    "name_en": "Captain America",
+    "color": "#2a6db5",
+    "back": "res://assets/cards/heroes/cap/back.png",
+    "cards": [
+      { "symbols": ["move"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
+      { "symbols": ["heroic", "heroic"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["move", "attack"] },
+      { "symbols": ["move"] },
+      { "symbols": ["heroic", "heroic"] },
+      { "symbols": ["attack"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
+      { "symbols": ["wild", "wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["move", "attack"] },
+      { "symbols": ["heroic"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
+      { "symbols": ["heroic", "heroic"] }
+    ]
+  },
+  "ironman": {
+    "name": "钢铁侠",
+    "name_en": "Iron Man",
+    "color": "#b33a1f",
+    "back": "res://assets/cards/heroes/ironman/back.png",
+    "cards": [
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["move", "attack"] },
+      { "symbols": ["move"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["heroic"] },
+      { "symbols": ["move", "heroic"] },
+      { "symbols": ["wild", "wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["heroic", "heroic"] },
+      { "symbols": ["attack"], "effect": { "type": "give_move_x2", "name": "斯塔克资源", "text": "从供应池拿 2 个移动指示物，分配给任意英雄" } },
+      { "symbols": ["move"], "effect": { "type": "give_attack_x2", "name": "高级战斗分析", "text": "从供应池拿 2 个攻击指示物，分配给任意英雄" } },
+      { "symbols": ["heroic"], "effect": { "type": "draw_to_3", "name": "能量充能", "text": "从牌组抽牌直到手牌有 3 张" } }
+    ]
+  },
+  "cmarvel": {
+    "name": "惊奇队长",
+    "name_en": "Captain Marvel",
+    "color": "#c0392b",
+    "back": "res://assets/cards/heroes/cmarvel/back.png",
+    "cards": [
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["heroic", "heroic"] },
+      { "symbols": ["move", "heroic"] },
+      { "symbols": ["move", "move"] },
+      { "symbols": ["move"] },
+      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } },
+      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } },
+      { "symbols": ["wild", "wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } }
+    ]
+  },
+  "hulk": {
+    "name": "绿巨人",
+    "name_en": "Hulk",
+    "color": "#3a7d3a",
+    "back": "res://assets/cards/heroes/hulk/back.png",
+    "cards": [
+      { "symbols": ["move", "attack"] },
+      { "symbols": ["heroic"] },
+      { "symbols": ["wild", "wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["heroic"] },
+      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["move"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } },
+      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } }
+    ]
+  },
+  "widow": {
+    "name": "黑寡妇",
+    "name_en": "Black Widow",
+    "color": "#5b5b6e",
+    "back": "res://assets/cards/heroes/widow/back.png",
+    "cards": [
+      { "symbols": ["heroic", "heroic"] },
+      { "symbols": ["move", "heroic"] },
+      { "symbols": ["move", "attack"] },
+      { "symbols": ["attack"] },
+      { "symbols": ["attack", "attack"] },
+      { "symbols": ["move"] },
+      { "symbols": ["wild", "wild"] },
+      { "symbols": ["wild"] },
+      { "symbols": ["move", "heroic"] },
+      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } },
+      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } },
+      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "missions": [
+    { "id": "rescue", "name": "营救平民", "slots": 9, "icon": "civ" },
+    { "id": "defeat", "name": "击败暴徒", "slots": 9, "icon": "thug" },
+    { "id": "clear", "name": "清除威胁", "slots": 4, "icon": "threat" }
+  ],
+  "challenges": [
+    { "id": "moderate", "name": "中等挑战", "desc": "每位玩家从自己牌库移除 1 张「万能」卡（单万能）", "remove": ["wild"] },
+    { "id": "hard", "name": "困难挑战", "desc": "每位玩家从自己牌库移除 1 张「万能万能」卡（双万能）", "remove": ["wild_wild"] },
+    { "id": "heroic", "name": "英雄挑战", "desc": "每位玩家从自己牌库移除两张万能卡（单+双）", "remove": ["wild", "wild_wild"] }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "redskull": {
+    "name": "红骷髅",
+    "name_en": "Red Skull",
+    "color": "#7a1f1f",
+    "image": "res://assets/cards/villains/redskull/panel.png",
+    "back": "res://assets/cards/villains/redskull/back.png",
+    "health": { "2": 4, "3": 8, "4": 11 },
+    "bam": "对红骷髅所在地点全部英雄造成 1 点伤害，恐惧指示物推进 2 格。",
+    "overflow": "无法放置平民/暴徒指示物时，恐惧轨道推进对应无法放置的指示物数量。",
+    "plot": "恐惧轨道到达 20，英雄方失败。",
+    "plot_track": "fear",
+    "fear_track_max": 20,
+    "special": "",
+    "actions": [
+      { "move": 1, "bam": true,  "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
+      { "move": 2, "bam": true,  "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
+      { "move": 2, "bam": true,  "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
+      { "move": 3, "bam": false, "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
+      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug", "thug", "civ", "civ"], ["thug", "civ"]] },
+      { "move": 4, "bam": true,  "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
+      { "move": 1, "bam": false, "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
+      { "move": 0, "bam": true,  "effect": { "type": "redskull_emergency", "name": "红骷髅紧急", "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。" }, "place": null },
+      { "move": 0, "bam": true,  "effect": null, "place": null },
+      { "move": 0, "bam": true,  "effect": { "type": "redskull_emergency", "name": "红骷髅紧急", "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。" }, "place": null },
+      { "move": 0, "bam": true,  "effect": { "type": "hail_hydra", "name": "九头蛇万岁", "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。" }, "place": null },
+      { "move": 0, "bam": true,  "effect": { "type": "hail_hydra", "name": "九头蛇万岁", "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。" }, "place": null }
+    ],
+    "threats": [
+      { "name": "九头蛇夫人", "text": "对该地点每个英雄造成 1 点伤害；英雄消耗 1 危机指示物免疫该伤害", "henchman_hp": 5, "bam": true, "arrival": false, "start_turn": false, "constant": false },
+      { "name": "洗脑", "text": "该地点与相邻地点的每位英雄获得 1 危机指示物", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
+      { "name": "九头蛇特工鲍勃", "text": "英雄在该地点开启回合时获得 1 危机指示物", "henchman_hp": 4, "bam": false, "arrival": false, "start_turn": false, "constant": false },
+      { "name": "颠覆", "text": "弃置本地点平民、暴徒；恐惧指示物推进等于弃置指示物数量", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
+      { "name": "交叉骨", "text": "对该地点每个英雄造成 2 点伤害；英雄消耗 2 危机指示物免疫该伤害", "henchman_hp": 6, "bam": true, "arrival": false, "start_turn": false, "constant": false },
+      { "name": "九头蛇精英部队", "text": "该地点每个暴徒需要 2 点伤害才能击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true }
+    ]
+  },
+  "ultron": {
+    "name": "奥创",
+    "name_en": "Ultron",
+    "color": "#2e4d8a",
+    "image": "res://assets/cards/villains/ultron/panel.png",
+    "back": "res://assets/cards/villains/ultron/back.png",
+    "health": { "2": 4, "3": 8, "4": 11 },
+    "bam": "在奥创所在地点放置 3 个暴徒，对该地点每一名英雄造成 1 点伤害。",
+    "overflow": "若无法在地点上放置平民或暴徒指示物，则将该指示物放到顺时针的下一处地点。",
+    "plot": "当全部地点都被平民或暴徒完全占领，英雄方失败。",
+    "plot_track": "full",
+    "fear_track_max": 0,
+    "special": "",
+    "actions": [
+      { "move": 2, "bam": true,  "effect": null, "place": null },
+      { "move": 2, "bam": true,  "effect": null, "place": null },
+      { "move": 3, "bam": true,  "effect": null, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "hypnotize", "name": "催眠", "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒" }, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "head_case", "name": "脑袋视线", "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物" }, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "head_case", "name": "脑袋视线", "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物" }, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "hypnotize", "name": "催眠", "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒" }, "place": null },
+      { "move": 4, "bam": true,  "effect": null, "place": null },
+      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug"], ["thug", "civ"]] },
+      { "move": 1, "bam": false, "effect": null, "place": [["thug"], ["thug", "thug", "thug"], ["thug"]] },
+      { "move": 1, "bam": false, "effect": null, "place": [["civ"], ["civ", "civ", "civ"], ["civ"]] },
+      { "move": 0, "bam": true,  "effect": null, "place": null }
+    ],
+    "threats": [
+      { "name": "复制", "text": "该地点增加 1 个暴徒", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
+      { "name": "奥创病毒", "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": true, "constant": false },
+      { "name": "奥创克隆体", "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果", "henchman_hp": 4, "bam": true, "arrival": false, "start_turn": false, "constant": false },
+      { "name": "奥创病毒", "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": true, "constant": false },
+      { "name": "奥创克隆体", "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果", "henchman_hp": 4, "bam": true, "arrival": false, "start_turn": false, "constant": false },
+      { "name": "复制", "text": "该地点增加 1 个暴徒", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false }
+    ]
+  },
+  "taskmaster": {
+    "name": "模仿大师",
+    "name_en": "Taskmaster",
+    "color": "#3a3a55",
+    "image": "res://assets/cards/villains/taskmaster/panel.png",
+    "back": "res://assets/cards/villains/taskmaster/back.png",
+    "health": { "2": 2, "3": 4, "4": 6 },
+    "bam": "对模仿大师所在地点的每名英雄造成 1 点伤害，并在该地点放置 1 个危机指示物。",
+    "overflow": "地点无法放置平民或暴徒指示物时，改为向该地点放置等量危机指示物。",
+    "plot": "",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "只要地点存在危机指示物，英雄不能伤害该地点的模仿大师。英雄可在没有平民、暴徒的地点，消耗英勇或攻击行动清除 1 个危机指示物。",
+    "actions": [
+      { "move": 0, "bam": true,  "effect": null, "place": null },
+      { "move": 1, "bam": true,  "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
+      { "move": 1, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] },
+      { "move": 2, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] },
+      { "move": 2, "bam": true,  "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
+      { "move": 3, "bam": false, "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
+      { "move": 0, "bam": false, "effect": { "type": "mimic_heroic", "name": "模仿", "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的英勇符号数量的平民指示物" }, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "mimic_attack", "name": "模仿", "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的攻击符号数量的暴徒指示物" }, "place": null },
+      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug", "civ"], ["thug", "civ"]] },
+      { "move": 0, "bam": false, "effect": { "type": "dark_plan", "name": "黑暗的计划", "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物" }, "place": null },
+      { "move": 0, "bam": false, "effect": { "type": "dark_plan", "name": "黑暗的计划", "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物" }, "place": null },
+      { "move": 4, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] }
+    ],
+    "threats": [
+      { "name": "精锐暴徒", "text": "该地点的每一个暴徒需要 2 点伤害才能被击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
+      { "name": "纠缠陷阱", "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
+      { "name": "爆炸陷阱", "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
+      { "name": "纠缠陷阱", "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
+      { "name": "精锐暴徒", "text": "该地点的每一个暴徒需要 2 点伤害才能被击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
+      { "name": "爆炸陷阱", "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true }
+    ]
+  }
+}

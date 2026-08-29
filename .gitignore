@@ -1,0 +1,14 @@
+# Godot 导入缓存
+.godot/
+
+# 导出产物
+build/
+
+# 交付包（本地打包输出）
+漫威联合游戏_v1/
+*.zip
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+*.tmp
