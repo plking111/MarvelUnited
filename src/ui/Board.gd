@@ -24,16 +24,28 @@ var _villain_deck_info: Control
 var _villain_deck_icon: TextureRect
 var _villain_deck_num: Label
 var _hp_label: Label
+var _hp_icon: TextureRect
 var _fear_bar: ProgressBar
 var _fear_label: Label
 var _phase_label: Label
 var _turn_label: Label
+var _campaign_label: Label
+var _villain_deck_hint: Label   # 无限战争：反派牌堆顶是宝石时的提示
+var _energy_done_box: HBoxContainer  # Bug4：右侧 已完成能量卡图标区
+var _gauntlet: Control
+var _gauntlet_base: TextureRect
+var _gem_nodes: Dictionary = {}   # stone index -> TextureRect (无限战争手套宝石图标)
+var _gauntlet_pos: Dictionary = {} # stone index -> Vector2 (相对手套容器)
+var _energy_box: HBoxContainer
+var _energy_buttons: Array = []   # 能量卡填充按钮（战役模式 hero_actions 阶段显示）
 var _mission_box: HBoxContainer
 var _loc_views: Array = []
 var _story_box: HBoxContainer
 var _hand_box: HBoxContainer
 var _hand_panel: PanelContainer
 var _hand_label: Label
+var _hand_random: ColorRect   # 乌木侯控制时叠在手牌区的暗色遮罩
+var _hand_random_btn: Button  # 手牌区中央的"随机出牌"按钮
 var _action_box: HBoxContainer
 var _token_box: HBoxContainer
 var _log_box: VBoxContainer
@@ -52,6 +64,10 @@ var _start_button: Button
 var _story_scroll: ScrollContainer
 var _zoom_panel: TextureRect
 var _peek_hero: String = ""
+var _eliminated_box: HBoxContainer   # 灭霸：阵亡英雄图标区（灭霸面板生命值下方）
+var _eliminated_label: Label          # 灭霸：已阵亡英雄计数文字
+var _energy_stack_box: Control      # 灭霸非IW：激活能量卡 背面叠加区（任务牌下方）
+var _endangered_side_box: HBoxContainer  # 濒危地点：手牌区右侧 牌组旁指示物
 var _peek_prev: Button
 var _peek_next: Button
 var _deck_info: Control
@@ -83,9 +99,9 @@ func _ready() -> void:
 		"clear": load("res://assets/tokens/mission_clear.png"),
 	}
 	# 英雄/反派图标：使用卡牌背面图（英雄=英雄卡背，反派=反派行动牌背）
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow"]:
+	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot"]:
 		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]:
 		_villain_icons[vid] = load(DB.villain(vid)["back"])
 	_build_ui()
 	# 弹窗/提示信号 → 弹窗层模块（CanvasLayer=100，永不被主界面内容遮挡）
@@ -97,8 +113,10 @@ func _ready() -> void:
 	Events.prompt_story_card.connect(_popup.show_story_pick)
 	Events.prompt_villain_card.connect(_popup.show_villain_card)
 	Events.prompt_deck_card.connect(_popup.show_deck_pick)
+	Events.prompt_hero_pick.connect(_popup.show_hero_pick)
 	Events.toast.connect(_popup.show_toast)
-	Events.game_over.connect(_popup.show_game_over)
+	Events.mission_completed.connect(_popup.show_mission_completed)
+	Events.game_over.connect(_on_game_over)
 	_setup = Game.pending_setup
 	if _setup.is_empty():
 		_setup = {"villain": "redskull", "heroes": ["cap"], "challenge": "none"}
@@ -165,8 +183,16 @@ func _build_ui() -> void:
 	_fear_marker.visible = false
 	_fear_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_villain_panel.add_child(_fear_marker)
+	_hp_icon = TextureRect.new()
+	_hp_icon.texture = load("res://assets/tokens/hp_icon.png")
+	_hp_icon.custom_minimum_size = Vector2(26, 26)
+	_hp_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_hp_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_hp_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hp_icon.position = Vector2(5, 182)
+	villain_bg.add_child(_hp_icon)
 	_hp_label = UiKit.label("", 24, Color(1, 0.9, 0.4))
-	_hp_label.position = Vector2(5, 180)
+	_hp_label.position = Vector2(38, 180)
 	villain_bg.add_child(_hp_label)
 	_fear_bar = ProgressBar.new()
 	_fear_bar.position = Vector2(5, 213)
@@ -176,11 +202,34 @@ func _build_ui() -> void:
 	_fear_label = UiKit.label("", 16, Color(0.9, 0.6, 0.6))
 	_fear_label.position = Vector2(5, 238)
 	villain_bg.add_child(_fear_label)
+	# 灭霸：已阵亡英雄计数（生命值右侧，x/y，y=初始玩家数）+ 图标（下方，缩小到不超面板）
+	_eliminated_label = UiKit.label("已阵亡 0/0", 17, Color(1, 0.75, 0.4))
+	_eliminated_label.position = Vector2(250, 182)
+	_eliminated_label.custom_minimum_size = Vector2(150, 24)
+	_eliminated_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_eliminated_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_eliminated_label.add_theme_constant_override("outline_size", 3)
+	_eliminated_label.visible = false
+	villain_bg.add_child(_eliminated_label)
+	_eliminated_box = HBoxContainer.new()
+	_eliminated_box.position = Vector2(250, 210)
+	_eliminated_box.add_theme_constant_override("separation", 4)
+	_eliminated_box.alignment = BoxContainer.ALIGNMENT_BEGIN
+	_eliminated_box.visible = false
+	villain_bg.add_child(_eliminated_box)
 
 	# 反派牌堆数量显示（样式与英雄牌库一致：背面图标 + 数字叠加）
 	_villain_deck_label = UiKit.label("反派牌堆", 14, Color(0.8, 0.8, 0.9))
 	_villain_deck_label.position = Vector2(432, 178)
 	add_child(_villain_deck_label)
+	# 无限战争：反派牌堆顶是宝石时的提示（在反派牌堆右侧）
+	_villain_deck_hint = UiKit.label("", 16, Color(1, 0.6, 1))
+	_villain_deck_hint.position = Vector2(520, 186)
+	_villain_deck_hint.custom_minimum_size = Vector2(200, 40)
+	_villain_deck_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_villain_deck_hint.add_theme_constant_override("outline_size", 3)
+	_villain_deck_hint.visible = false
+	add_child(_villain_deck_hint)
 	_villain_deck_info = Control.new()
 	_villain_deck_info.position = Vector2(432, 200)
 	_villain_deck_info.custom_minimum_size = Vector2(38, 52)
@@ -210,6 +259,40 @@ func _build_ui() -> void:
 	_turn_label.size = Vector2(700, 24)
 	add_child(_turn_label)
 
+	# 无限战争战役信息（右侧竖排：局数/宝石/能量卡解锁；避开右上角返回按钮与地点环）
+	_campaign_label = UiKit.label("", 15, Color(1, 0.8, 0.5))
+	_campaign_label.position = Vector2(1755, 100)
+	_campaign_label.size = Vector2(160, 240)
+	_campaign_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_campaign_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_campaign_label.add_theme_constant_override("outline_size", 4)
+	_campaign_label.visible = false
+	add_child(_campaign_label)
+	# Bug4：无限战争 已完成能量卡图标区（战役信息下方，横向）
+	_energy_done_box = HBoxContainer.new()
+	_energy_done_box.position = Vector2(1660, 340)
+	_energy_done_box.add_theme_constant_override("separation", 6)
+	_energy_done_box.visible = false
+	add_child(_energy_done_box)
+
+	# 无限战争：灭霸无限手套（地图环与日志之间的空隙），随收集进度点亮对应宝石
+	_build_gauntlet()
+
+	# 无限战争能量卡区（任务牌下方略近处，两张：开局可解锁 / 需三任务解锁）
+	_energy_box = HBoxContainer.new()
+	_energy_box.position = Vector2(1344 - 162, 534)
+	_energy_box.add_theme_constant_override("separation", 8)
+	_energy_box.visible = false
+	add_child(_energy_box)
+
+	# 灭霸(非无限战争Boss) 激活能量卡 背面叠加区（任务牌下方，横置背面卡相互叠加）
+	_energy_stack_box = Control.new()
+	# 原点 = 任务牌中心(x≈1340)，卡片用相对中心坐标；位于任务牌下方
+	_energy_stack_box.position = Vector2(1340, 520)
+	_energy_stack_box.custom_minimum_size = Vector2(120, 180)
+	_energy_stack_box.visible = false
+	add_child(_energy_stack_box)
+
 	# 故事情节（横幅下方横向，带滚动条可查看全部历史卡）
 	var s_label := UiKit.label("故事情节", 14, Color(0.8, 0.9, 1))
 	s_label.position = Vector2(430, 68)
@@ -226,9 +309,9 @@ func _build_ui() -> void:
 	_story_scroll.add_child(_story_box)
 
 	# 返回主菜单（右上角）
-	var back_btn := UiKit.button("返回主菜单", Color(0.4, 0.3, 0.5))
+	var back_btn := UiKit.button_bordered("返回主菜单", Color(0.4, 0.3, 0.5))
 	back_btn.position = Vector2(1760, 12)
-	back_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://src/ui/MainMenu.tscn"))
+	back_btn.pressed.connect(func(): UiKit.goto_scene("res://src/ui/MainMenu.tscn"))
 	add_child(back_btn)
 
 	# 开始游戏按钮（准备阶段显示：初始指示物已放置，点击进入第一个反派回合）
@@ -241,9 +324,9 @@ func _build_ui() -> void:
 	_start_button.visible = false
 	add_child(_start_button)
 
-	# 任务卡（地点环正中心；含指示物行，整体略上移）
+	# 任务卡（地点环正中心；含指示物行，整体略上移；下方留能量卡文字区）
 	_mission_box = HBoxContainer.new()
-	_mission_box.position = Vector2(1344 - 162, 508 - 112)
+	_mission_box.position = Vector2(1344 - 162, 508 - 160)
 	_mission_box.add_theme_constant_override("separation", 6)
 	add_child(_mission_box)
 
@@ -301,6 +384,27 @@ func _build_ui() -> void:
 	_hand_box.add_theme_constant_override("separation", 6)
 	hv.add_child(_hand_box)
 
+	# 乌木侯控制：暗色遮罩 + 顶部中心"随机出牌"按钮（叠在手牌区之上）
+	_hand_random = ColorRect.new()
+	_hand_random.color = Color(0, 0, 0, 0.55)
+	_hand_random.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_hand_random.mouse_filter = Control.MOUSE_FILTER_STOP
+	_hand_random.visible = false
+	_hand_panel.add_child(_hand_random)
+	_hand_random_btn = UiKit.button("随机出牌", Color(0.5, 0.3, 0.7))
+	_hand_random_btn.custom_minimum_size = Vector2(220, 60)
+	_hand_random_btn.add_theme_font_size_override("font_size", 26)
+	_hand_random_btn.anchor_left = 0.5
+	_hand_random_btn.anchor_right = 0.5
+	_hand_random_btn.anchor_top = 0.5
+	_hand_random_btn.anchor_bottom = 0.5
+	_hand_random_btn.offset_left = -110
+	_hand_random_btn.offset_right = 110
+	_hand_random_btn.offset_top = -30
+	_hand_random_btn.offset_bottom = 30
+	_hand_random_btn.pressed.connect(_on_random_play_pressed)
+	_hand_random.add_child(_hand_random_btn)
+
 	# 行动条（手牌区上方，左对齐；避免被地图/地点卡遮挡）
 	_action_box = HBoxContainer.new()
 	_action_box.position = Vector2(20, 760)
@@ -310,6 +414,13 @@ func _build_ui() -> void:
 	_token_box.position = Vector2(20, 808)
 	_token_box.add_theme_constant_override("separation", 6)
 	add_child(_token_box)
+
+	# 濒危地点：手牌区右侧 玩家牌组旁指示物区
+	_endangered_side_box = HBoxContainer.new()
+	_endangered_side_box.position = Vector2(980, 884)
+	_endangered_side_box.add_theme_constant_override("separation", 8)
+	_endangered_side_box.visible = false
+	add_child(_endangered_side_box)
 
 	# 日志区域背景框（左侧中部，反派框下方）
 	var log_bg := Panel.new()
@@ -426,6 +537,9 @@ func _refresh_all() -> void:
 	_refresh_actions()
 	_refresh_phase()
 	_refresh_hero_badges()
+	_refresh_eliminated()
+	_refresh_energy_stack(Game.state)
+	_refresh_endangered_side()
 
 func _clear_children(container: Node) -> void:
 	for c in container.get_children():
@@ -440,7 +554,7 @@ func _refresh_villain() -> void:
 	if _villain_deck_icon != null:
 		_villain_deck_icon.texture = load(DB.villain(vid)["back"])
 		_villain_deck_num.text = "%d" % st["master_deck"].size()
-	_hp_label.text = "❤ %d / %d" % [st["villain_hp"], st["villain_hp_max"]]
+	_hp_label.text = "%d / %d" % [st["villain_hp"], st["villain_hp_max"]]
 	var track: String = DB.villain(vid).get("plot_track", "")
 	if track == "fear":
 		_fear_bar.visible = true
@@ -448,6 +562,13 @@ func _refresh_villain() -> void:
 		_fear_bar.value = st["fear"]
 		_fear_label.visible = true
 		_fear_label.text = "恐惧轨道：%d / %d" % [st["fear"], DB.villain(vid).get("fear_track_max", 20)]
+	elif track == "slaughter":
+		# 暗夜比邻星屠宰轨道：0 / 1-12，到达 12 英雄失败
+		_fear_bar.visible = true
+		_fear_bar.max_value = 12
+		_fear_bar.value = st.get("slaughter", 0)
+		_fear_label.visible = true
+		_fear_label.text = "屠宰轨道：%d / 12" % st.get("slaughter", 0)
 	else:
 		_fear_bar.visible = false
 		_fear_label.visible = false
@@ -490,6 +611,43 @@ func _refresh_locations() -> void:
 	for lv in _loc_views:
 		lv.refresh(Game.state)
 
+## 无限战争战役：局间过渡。胜利 → 下一局（前3局）/ 战役胜利（决战）；
+## 失败 → 前3局战败宝石落入灭霸手中继续下一局 / 决战失败战役失败。
+func _on_game_over(victory: bool, reason: String) -> void:
+	var iw: bool = Game.state.get("mode", "base") == "iw"
+	var is_final: bool = Game.state.get("final_battle", false)
+	var campaign: Variant = Game.state.get("campaign", null)
+	if campaign == null:
+		campaign = {}
+	if iw:
+		var stones: int = campaign.get("stones_collected", []).size()
+		var game_no: int = int(campaign.get("game", 1))
+		if is_final:
+			# 决战结束：战役结束
+			_popup.show_game_over(victory, reason)
+			return
+		# 前 3 局结束：显示战役进度 + 下一局按钮
+		var extra := "【战役进度】第 %d/3 局前哨战结束 ｜ 灭霸已收集宝石 %d/6 颗\n%s" % [game_no, stones, reason]
+		if not victory:
+			extra += "\n（本局埋入的宝石已全部落入灭霸手中）"
+		_popup.show_game_over(victory, extra, Callable(self, "_start_next_campaign_game"))
+		return
+	_popup.show_game_over(victory, reason)
+
+## 开始下一局战役：更新 campaign 局数并重新 setup
+func _start_next_campaign_game() -> void:
+	var c: Dictionary = Game.pending_campaign
+	c["game"] = int(c.get("game", 1)) + 1
+	Game.pending_campaign = c
+	Game.pending_setup["campaign_order"] = c["order"]
+	# 决战（第 4 局）：固定灭霸 + 专属地点；前 3 局：顺序取对应反派
+	var game_no: int = int(c["game"])
+	var vid: String = "thanos" if game_no >= 4 else String(c["order"][game_no - 1])
+	Game.pending_setup["villain"] = vid
+	if game_no >= 4:
+		Game.pending_setup["expansions"] = ["无限战争决战"]
+	get_tree().reload_current_scene()
+
 # 红骷髅恐惧轨道（面板内像素坐标，实测扫描：0(133,93)、1-10排y=115、11-20排y=135、
 # x 位置按面板实际方块 [134,157,183,206,231,256,280,305,329,351]）
 const REDSKULL_TRACK_XS := [134.0, 157.0, 183.0, 206.0, 231.0, 256.0, 280.0, 305.0, 329.0, 351.0]
@@ -508,13 +666,26 @@ func _refresh_story() -> void:
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		if e["type"] == "hero":
-			tr.texture = load(UiKit.hero_card_image(e["hero"], e["idx"]))
+			if e.get("face_down", false):
+				# 英雄行动牌面朝下：显示卡背面（下一个英雄无法从它获得行动）
+				tr.texture = load(DB.hero_back(e["hero"]))
+			else:
+				tr.texture = load(UiKit.hero_card_image(e["hero"], e["idx"]))
 		else:
-			tr.texture = load(UiKit.villain_action_image(Game.state["villain"], e["idx"]))
+			# 反派行动牌：面朝下显示行动牌背面（英雄看不到是哪张）；否则显示正面
+			if e.get("face_down", false) or e.get("idx", -1) < 0:
+				tr.texture = load(DB.villain(Game.state["villain"])["back"])
+			else:
+				tr.texture = load(UiKit.villain_action_image(Game.state["villain"], e["idx"]))
 		_bind_zoom(tr)
 		_story_box.add_child(tr)
-	# 滚动到最新
-	_story_scroll.scroll_horizontal = 1000000
+	# 故事情节在下一帧布局后才更新内容宽度；延迟一帧再滚到最右（最新），避免被钳制后回升
+	if is_instance_valid(_story_scroll):
+		_scroll_story_to_latest()
+
+func _scroll_story_to_latest() -> void:
+	await get_tree().process_frame
+	_story_scroll.scroll_horizontal = _story_scroll.get_h_scroll_bar().max_value
 
 func _refresh_hand() -> void:
 	_clear_children(_hand_box)
@@ -557,6 +728,24 @@ func _refresh_hand() -> void:
 		dk.custom_minimum_size = Vector2(36, 20)
 		_deck_info.add_child(dk)
 		_clear_children(_token_info_box)
+		# 神盾局：行动指示物共享给玩家（任意英雄都能用）
+		var stk: Dictionary = Game.state.get("shield_tokens", {})
+		var tk_icons_s := [_icon_move, _icon_attack, _icon_heroic, _icon_wild]
+		var tk_keys_s := ["move", "attack", "heroic", "wild"]
+		for i in range(4):
+			var vb := HBoxContainer.new()
+			vb.add_theme_constant_override("separation", 3)
+			vb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var ic := TextureRect.new()
+			ic.custom_minimum_size = Vector2(22, 22)
+			ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			ic.texture = tk_icons_s[i]
+			ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			vb.add_child(ic)
+			var lb := UiKit.label("×%d" % int(stk.get(tk_keys_s[i], 0)), 15, Color(0.95, 0.9, 0.7))
+			vb.add_child(lb)
+			_token_info_box.add_child(vb)
 		var playable_shield := phase == "hero_play"
 		for i in range(shield_hand.size()):
 			var card: Dictionary = shield_hand[i]
@@ -620,6 +809,10 @@ func _refresh_hand() -> void:
 		vb.add_child(lb)
 		_token_info_box.add_child(vb)
 	var playable := phase == "hero_play" and not previewing
+	# 乌木侯控制：随机出牌（暗色遮罩 + 居中"随机出牌"按钮），玩家不可逐张选
+	var controlled: bool = phase == "hero_play" and Game.state.get("random_play", false) and not Game.state.get("iw_mind_active", false) and not previewing
+	if _hand_random != null:
+		_hand_random.visible = controlled
 	for i in range(h["hand"].size()):
 		var card_idx: int = h["hand"][i]
 		var tr := TextureRect.new()
@@ -628,14 +821,18 @@ func _refresh_hand() -> void:
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.texture = load(UiKit.hero_card_image(hid, card_idx))
 		_bind_zoom(tr)
-		if playable:
+		if playable and not controlled:
 			tr.gui_input.connect(_on_hand_card_input.bind(i, tr))
-		tr.mouse_filter = Control.MOUSE_FILTER_STOP if playable else Control.MOUSE_FILTER_PASS
+		tr.mouse_filter = Control.MOUSE_FILTER_STOP if (playable and not controlled) else Control.MOUSE_FILTER_PASS
 		_hand_box.add_child(tr)
 
 func _on_hand_card_input(event: InputEvent, hand_idx: int, tr: TextureRect) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		Game.play_card(hand_idx)
+
+## 乌木侯控制：点击"随机出牌"按钮 → 随机打出一张手牌
+func _on_random_play_pressed() -> void:
+	Game.play_card(0)
 
 ## 绑定悬停放大：鼠标移入显示大图，移出隐藏（故事情节/手牌卡通用）
 func _bind_zoom(tr: TextureRect) -> void:
@@ -764,11 +961,345 @@ func _icon_for(key: String) -> Texture2D:
 		_:
 			return null
 
+## 无限战争：刷新任务牌下方的能量卡区（两张：开局可解锁 / 需三任务解锁）
+## 显示：放大卡图 + 槽位图标叠加在卡图内部（2×2，已填全亮/未填半透明，像任务卡）；
+## 未解锁的第二张整卡置暗并盖锁图标；标注能量卡 1/2。
+func _refresh_energy_cards(st: Dictionary) -> void:
+	_clear_children(_energy_box)
+	# Bug8：终局之战——收藏的能量卡由 _refresh_energy_stack 叠放显示（此处不铺开）
+	if st.get("final_battle", false):
+		_energy_box.visible = false
+		return
+	var table_e: int = int(st.get("table_energy", -1))
+	var hidden_e: int = int(st.get("hidden_energy", -1))
+	var cards: Array = [table_e, hidden_e]
+	for eidx in cards:
+		if eidx < 0 or eidx >= DB.energy_cards.size():
+			continue
+		var e: Dictionary = DB.energy_cards[eidx]
+		var can_fill: bool = Game.energy_can_fill(eidx)
+		var locked: bool = (eidx == hidden_e) and not can_fill
+		var filled: int = Game.energy_filled(eidx)
+		var need: Array = Game.energy_required_syms(eidx)
+		var box := Control.new()
+		box.custom_minimum_size = Vector2(150, 160)
+		# 卡图（放大，竖版）
+		var img := TextureRect.new()
+		img.texture = load(e["image"])
+		img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		img.position = Vector2(10, 14)
+		img.custom_minimum_size = Vector2(130, 128)
+		img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if locked:
+			img.modulate = Color(0.25, 0.25, 0.3, 0.9)  # 置暗
+		box.add_child(img)
+		# 未解锁：锁图标盖住卡图中央
+		if locked:
+			var lock := UiKit.label("🔒", 52, Color(1, 0.9, 0.4))
+			lock.position = Vector2(30, 42)
+			lock.custom_minimum_size = Vector2(90, 70)
+			lock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			box.add_child(lock)
+		# 2×2 槽位图标网格（叠加在卡图内部；已填全亮/未填半透明）
+		var slot_icons := {"move": _icon_move, "attack": _icon_attack, "heroic": _icon_heroic, "threat": _icon_threat, "wild": _icon_wild}
+		var slot_size := 38
+		var threat_size := 28  # 威胁槽单独缩小
+		# 网格以中心为锚：网格宽高 = 2*slot_size + 8
+		var grid_wh: float = 2.0 * slot_size + 8.0
+		var center_x := 74.0
+		var center_y := 70.0
+		var sx0 := center_x - grid_wh / 2.0
+		var sy0 := center_y - grid_wh / 2.0
+		var filled_slots: Array = Game.energy_filled_slots(eidx)
+		for si in range(mini(need.size(), 4)):
+			var sym: String = need[si]
+			# 每格中心按 38px 网格计算；威胁槽以该格中心为锚缩小显示
+			var sz: float = threat_size if sym == "threat" else slot_size
+			var cx: float = sx0 + (si % 2) * (slot_size + 8) + slot_size / 2.0
+			var cy: float = sy0 + (si / 2) * (slot_size + 8) + slot_size / 2.0
+			# 微调：左半边向右移一点，上半部分向下移 12px
+			if si % 2 == 0:
+				cx += 4.0
+			if si / 2 == 0:
+				cy += 12.0
+			var tr := TextureRect.new()
+			tr.texture = slot_icons.get(sym, _icon_wild)
+			tr.custom_minimum_size = Vector2(sz, sz)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.position = Vector2(cx - sz / 2.0, cy - sz / 2.0)
+			tr.modulate = Color(1, 1, 1, 1.0) if filled_slots.has(si) else Color(1, 1, 1, 0.2)
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			box.add_child(tr)
+		# 名称小字（卡图下方居中）
+		var lb := UiKit.label(e["name"], 13, Color(1, 0.85, 0.4) if can_fill else Color(0.6, 0.6, 0.6))
+		lb.position = Vector2(6, 144)
+		lb.custom_minimum_size = Vector2(140, 18)
+		lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lb.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		lb.add_theme_constant_override("outline_size", 3)
+		box.add_child(lb)
+		# 能量卡编号 1/2（左上角，按本局显示顺序）
+		var local_no := 1
+		if eidx == hidden_e and table_e >= 0:
+			local_no = 2
+		var num := UiKit.label("能量卡 %d" % local_no, 15, Color(1, 0.9, 0.4))
+		num.position = Vector2(6, 0)
+		num.custom_minimum_size = Vector2(80, 20)
+		num.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		num.add_theme_constant_override("outline_size", 3)
+		box.add_child(num)
+		_energy_box.add_child(box)
+
+## 制作一张简化的能量卡图标（终局之战：收集的能量卡用背面图显示）
+func _make_energy_card_simple(eidx: int) -> Control:
+	var box := Control.new()
+	box.custom_minimum_size = Vector2(120, 130)
+	var img := TextureRect.new()
+	img.texture = load("res://assets/cards/energy/back_%02d.png" % (eidx + 1))
+	if img.texture == null:
+		img.texture = load("res://assets/cards/energy/back_01.png")
+	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	img.position = Vector2(0, 0)
+	img.custom_minimum_size = Vector2(120, 120)
+	img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(img)
+	var lb := UiKit.label(DB.energy_cards[eidx]["name"], 12, Color(1, 0.85, 0.4))
+	lb.position = Vector2(0, 120)
+	lb.custom_minimum_size = Vector2(120, 14)
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lb.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	lb.add_theme_constant_override("outline_size", 3)
+	box.add_child(lb)
+	return box
+
+## Bug4：右侧显示"已完成"的能量卡图标（只显示之前完成的；当局进行中/未完成的不显示）
+func _refresh_energy_done(st: Dictionary) -> void:
+	_clear_children(_energy_done_box)
+	if st.get("final_battle", false):
+		_energy_done_box.visible = false
+		return
+	var c: Variant = st.get("campaign", null)
+	var unlocked: Array = c.get("energy_unlocked", []) if c is Dictionary else []
+	var shown := 0
+	for eidx in unlocked:
+		if eidx is int and eidx >= 0 and eidx < DB.energy_cards.size() and Game.energy_done(eidx):
+			_energy_done_box.add_child(_make_energy_card_simple(eidx))
+			shown += 1
+	_energy_done_box.visible = shown > 0
+
+## 灭霸(非无限战争Boss)：激活能量卡 背面叠加显示。
+## 每张显示横向背面卡；多张相互错开叠加，前面那张完整可见、后面那张只露出底部效果条。
+func _refresh_energy_stack(st: Dictionary) -> void:
+	_clear_children(_energy_stack_box)
+	# 灭霸非IW Boss 或 无限战争终局之战：激活/收集的能量卡都叠放显示
+	var base_thanos: bool = st.get("villain", "") == "thanos" and st.get("mode", "base") != "iw"
+	var final_thanos: bool = st.get("mode", "base") == "iw" and st.get("final_battle", false) and st.get("villain", "") == "thanos"
+	if not base_thanos and not final_thanos:
+		_energy_stack_box.visible = false
+		return
+	var c: Variant = st.get("campaign", {})
+	var unlocked: Array = c.get("energy_unlocked", []) if c is Dictionary else []
+	if unlocked.size() == 0:
+		_energy_stack_box.visible = false
+		return
+	# 横向背面卡尺寸（等比缩放，缩小显示）
+	var base_w := 118.0
+	var base_h := base_w * 960.0 / 1348.0   # 约84
+	# 上下错开幅度：调大到效果条高度以上，让被盖的卡露出的效果条不被上一张挡住
+	var overlap := 26.0
+	# 两列：>4 张时分两列，列中心相对任务牌中心对称偏移
+	var col_gap := 130.0                    # 两列中心间距
+	var col_offset := col_gap / 2.0         # 每列中心距任务牌中心的偏移
+	# 分列：>4 张分两列（左列在前填，右列填剩余）；否则单列
+	var total: int = unlocked.size()
+	var col_count := 1
+	if total > 4:
+		col_count = 2
+	# 计算每列的卡数量
+	var col_sizes: Array = []
+	if col_count == 1:
+		col_sizes = [total]
+	else:
+		col_sizes = [int(ceil(total / 2.0)), int(floor(total / 2.0))]
+	# 每列：竖向叠加，前面卡在最上、后面的往下露出底部；列内用相对于"列中心"x的偏移
+	var col_x: Array = [0.0]
+	if col_count == 2:
+		col_x = [-col_offset, col_offset]
+	var card_i := 0
+	for col in range(col_count):
+		var n: int = col_sizes[col]
+		for j in range(n - 1, -1, -1):
+			var eidx: int = int(unlocked[card_i])
+			var back_idx: int = eidx + 1
+			var back_tex: Texture2D = load("res://assets/cards/energy/back_%02d.png" % back_idx)
+			if back_tex == null:
+				back_tex = load("res://assets/cards/energy/back_01.png")
+			var tr := TextureRect.new()
+			tr.texture = back_tex
+			tr.custom_minimum_size = Vector2(base_w, base_h)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			# 列内竖向叠加：j 越大(越靠前/最上)越靠上；前面的卡完整可见、后面的露出底部
+			tr.position = Vector2(col_x[col] - base_w / 2.0, j * overlap)
+			_energy_stack_box.add_child(tr)
+			card_i += 1
+	_energy_stack_box.visible = true
+
+## 濒危地点：手牌区右侧显示每位玩家的牌组旁指示物（按序号 1-4）
+func _refresh_endangered_side() -> void:
+	if _endangered_side_box == null:
+		return
+	_clear_children(_endangered_side_box)
+	var st: Dictionary = Game.state
+	if st.get("challenge", "") != "endangered":
+		_endangered_side_box.visible = false
+		return
+	var end: Dictionary = st.get("endangered", {})
+	if not end.has("setup_done"):
+		_endangered_side_box.visible = false
+		return
+	# 只显示当前行动英雄自己的濒危指示物（玩家据此知道该英雄守护哪个地点）
+	var cur: String = Game.current_hero_id()
+	if cur != "" and end.has(cur):
+		var idx: int = st["hero_ids"].find(cur)
+		var num: int = idx + 1
+		var tr := TextureRect.new()
+		tr.texture = load("res://assets/tokens/endangered_%d.png" % num)
+		tr.custom_minimum_size = Vector2(44, 44)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_endangered_side_box.add_child(tr)
+	_endangered_side_box.visible = cur != "" and end.has(cur)
+
+## 无限战争：构建灭霸无限手套控件（地图环与日志之间的空隙）
+## 尺寸与宝石位置按空手套素材(459x841)等比缩放；宝石按 DB.stones 顺序放置。
+func _build_gauntlet() -> void:
+	# 放置位置：日志右侧、地图环左侧的空隙（x≈505-994），垂直居中于地图中心
+	var disp_h := 470.0
+	var disp_w := disp_h * 459.0 / 841.0     # ≈256
+	var pos := Vector2(1344 - 350 - disp_w - 118, 508 - disp_h / 2.0)
+	# 空手套素材内的宝石位置(基于459x841)，缩放到显示尺寸
+	var gem_pos := {
+		0: Vector2(212.2, 202.1),  # mind 心灵(黄, 手背中心) -> idx0
+		1: Vector2(89.3, 80.7),    # power 力量(紫, 顶排左) -> idx1
+		2: Vector2(246.4, 79.7),   # reality 现实(红, 顶排) -> idx2
+		3: Vector2(313.9, 81.7),   # soul 灵魂(橙, 顶排) -> idx3
+		4: Vector2(161.8, 78.8),   # space 空间(蓝, 顶排) -> idx4
+		5: Vector2(378.4, 181.2),  # time 时间(绿, 侧伸) -> idx5
+	}
+	var sx := disp_w / 459.0
+	var sy := disp_h / 841.0
+
+	_gauntlet = Control.new()
+	_gauntlet.position = pos
+	_gauntlet.custom_minimum_size = Vector2(disp_w, disp_h)
+	_gauntlet.size = Vector2(disp_w, disp_h)
+	_gauntlet.visible = false
+	add_child(_gauntlet)
+
+	# 手套底图（空手套，透明背景）
+	_gauntlet_base = TextureRect.new()
+	_gauntlet_base.texture = load("res://assets/ui/gauntlet/gauntlet_empty.png")
+	_gauntlet_base.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_gauntlet_base.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_gauntlet_base.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_gauntlet_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_gauntlet.add_child(_gauntlet_base)
+
+	# 六颗宝石节点（默认隐藏，收集到对应宝石才显示）
+	_gem_nodes.clear()
+	var gem_files := {
+		0: "res://assets/ui/gauntlet/gem_mind.png",
+		1: "res://assets/ui/gauntlet/gem_power.png",
+		2: "res://assets/ui/gauntlet/gem_reality.png",
+		3: "res://assets/ui/gauntlet/gem_soul.png",
+		4: "res://assets/ui/gauntlet/gem_space.png",
+		5: "res://assets/ui/gauntlet/gem_time.png",
+	}
+	# 每颗宝石原sprite直径(px)，按素材比例显示
+	var gem_d := {
+		0: 61, 1: 43, 2: 43, 3: 43, 4: 43, 5: 49,
+	}
+	for si in range(DB.stones.size()):
+		var g := TextureRect.new()
+		g.texture = load(gem_files[si])
+		g.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		g.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		var gsize := Vector2(gem_d[si], gem_d[si]) * (disp_h / 841.0)
+		g.position = Vector2(gem_pos[si].x * sx, gem_pos[si].y * sy) - gsize / 2.0
+		g.custom_minimum_size = gsize
+		g.size = gsize
+		g.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		g.visible = false
+		_gauntlet.add_child(g)
+		_gem_nodes[si] = g
+	_gauntlet_pos = gem_pos
+
+## 无限战争：按已收集宝石刷新手套点亮状态
+func _update_gauntlet() -> void:
+	if _gauntlet == null:
+		return
+	var st: Dictionary = Game.state
+	var is_iw: bool = st.get("mode", "base") == "iw"
+	_gauntlet.visible = is_iw
+	if not is_iw:
+		return
+	var collected: Array = []
+	var c: Variant = st.get("campaign", null)
+	if c is Dictionary and not c.is_empty():
+		collected = c.get("stones_collected", [])
+	for si in range(DB.stones.size()):
+		var nd: TextureRect = _gem_nodes.get(si)
+		if nd != null:
+			nd.visible = collected.has(si)
+
 func _refresh_phase() -> void:
 	var st: Dictionary = Game.state
 	var phase: String = st["phase"]
 	var hid: String = Game.current_hero_id()
 	var shield: bool = Game.state.get("mode", "base") == "shield"
+	# 无限战争战役信息（右侧竖排）
+	var is_iw: bool = st.get("mode", "base") == "iw"
+	_campaign_label.visible = is_iw
+	# Bug8：终局之战也要显示收集的能量卡（non-final 显示当前局；final 显示收集的能量卡）
+	_energy_box.visible = is_iw
+	_update_gauntlet()
+	if is_iw:
+		var c: Variant = st.get("campaign", null)
+		if c is Dictionary and not c.is_empty():
+			var game_no: int = int(c.get("game", 1))
+			var stones: int = c.get("stones_collected", []).size()
+			var lines: Array = []
+			if st.get("final_battle", false):
+				lines.append("⚔️ 终局之战")
+			else:
+				lines.append("⚔️ 无限战争 %d/3" % game_no)
+			# Bug3：去掉宝石进度行（💎 x/6 与 ◆◇），宝石收集逻辑保留
+			var energy: Array = c.get("energy_unlocked", [])
+			lines.append("⚡ 能量卡 %d 张" % energy.size())
+			lines.append("（决战使用）" if st.get("final_battle", false) else "")
+			_campaign_label.text = "\n".join(lines)
+		else:
+			_campaign_label.text = ""
+		_refresh_energy_cards(st)
+		_refresh_energy_done(st)
+		# Bug2：反派牌堆顶是无限宝石时，在反派牌堆右侧提示
+		var hint := ""
+		var deck_top: Variant = st.get("master_deck", []).front() if st.get("master_deck", []).size() > 0 else null
+		if not st.get("final_battle", false) and deck_top is Dictionary and deck_top.has("stone"):
+			hint = "灭霸即将收集到宝石"
+		_villain_deck_hint.text = hint
+		_villain_deck_hint.visible = hint != ""
+	else:
+		_campaign_label.text = ""
+		_energy_done_box.visible = false
+		_villain_deck_hint.visible = false
 	match phase:
 		"setup":
 			# 顶部横幅让位给"开始游戏"按钮（按钮自带说明文字）
@@ -828,6 +1359,32 @@ func _refresh_hero_badges() -> void:
 		return
 	_prev_icon_locs = new_locs.duplicate()
 	_rebuild_icons(st)
+
+## 灭霸：右下角显示阵亡英雄图标（仅图标，无文字）
+func _refresh_eliminated() -> void:
+	if _eliminated_box == null or _eliminated_label == null:
+		return
+	var st: Dictionary = Game.state
+	if st.is_empty() or st.get("villain", "") != "thanos":
+		_eliminated_box.visible = false
+		_eliminated_label.visible = false
+		return
+	_eliminated_label.visible = true
+	var elim: Array = st.get("eliminated", [])
+	_clear_children(_eliminated_box)
+	for hid in elim:
+		var tr := TextureRect.new()
+		tr.custom_minimum_size = Vector2(24, 32)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.texture = _hero_icons.get(hid)
+		tr.modulate = Color(0.55, 0.55, 0.55)   # 暗淡表示阵亡
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_eliminated_box.add_child(tr)
+	# x / y：x=已淘汰数，y=初始玩家数
+	var total: int = int(st.get("player_count", st.get("hero_ids", []).size()))
+	_eliminated_label.text = "已阵亡 %d/%d" % [elim.size(), total]
+	_eliminated_box.visible = elim.size() > 0
 
 ## 播放角色移动动画：每个移动角色沿地点环逐点平移（每步一段动画），全部完成后重建
 func _start_icon_animations(st: Dictionary, new_locs: Dictionary, old_locs: Dictionary) -> void:
@@ -980,4 +1537,13 @@ func _on_log(text: String, color: Color) -> void:
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.custom_minimum_size = Vector2(450, 0)
 	_log_box.add_child(l)
-	_log_scroll.scroll_vertical = 1000000
+	# 日志在下一帧布局后才更新内容高度；延迟一帧再滚到底，避免滚动条被旧内容钳制后回升
+	await _scroll_log_to_bottom()
+
+func _scroll_log_to_bottom() -> void:
+	await get_tree().process_frame
+	# 确保布局已完成后再取最新 max_value 并滚到底
+	var bar: ScrollBar = _log_scroll.get_v_scroll_bar()
+	await get_tree().process_frame
+	_log_scroll.scroll_vertical = bar.max_value
+	_log_scroll.scroll_vertical = _log_scroll.get_v_scroll_bar().max_value

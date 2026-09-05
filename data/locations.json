@@ -4,65 +4,511 @@
       "expansion": "基础盒",
       "name": "中央公园",
       "slots": 5,
-      "initial": ["civ", "civ", "thug", "thug", null],
+      "initial": [
+        "civ",
+        "civ",
+        "thug",
+        "thug",
+        null
+      ],
       "image": "res://assets/cards/locations/central_park.png",
-      "end_turn": { "type": "move_tokens", "text": "回合结束：分批次将此地点最多 2 名平民或暴徒（任意组合），逐个移动到任意有空位的地点。" }
+      "end_turn": {
+        "type": "move_tokens",
+        "text": "回合结束：分批次将此地点最多 2 名平民或暴徒（任意组合），逐个移动到任意有空位的地点。"
+      }
     },
     "avengers_tower": {
       "expansion": "基础盒",
       "name": "复仇者大厦",
       "slots": 3,
-      "initial": ["civ", null, null],
+      "initial": [
+        "civ",
+        null,
+        null
+      ],
       "image": "res://assets/cards/locations/avengers_tower.png",
-      "end_turn": { "type": "search_top", "text": "回合结束：你可以从你的牌组搜寻 1 张卡牌，洗混牌组后，把这张牌放到牌组顶部。" }
+      "end_turn": {
+        "type": "search_top",
+        "text": "回合结束：你可以从你的牌组搜寻 1 张卡牌，洗混牌组后，把这张牌放到牌组顶部。"
+      }
     },
     "avengers_mansion": {
       "expansion": "基础盒",
       "name": "复仇者庄园",
       "slots": 3,
-      "initial": ["civ", null, null],
+      "initial": [
+        "civ",
+        null,
+        null
+      ],
       "image": "res://assets/cards/locations/avengers_mansion.png",
-      "end_turn": { "type": "draw_to_3", "text": "回合结束：抽牌，直到你的手牌达到 3 张。" }
+      "end_turn": {
+        "type": "draw_to_3",
+        "text": "回合结束：抽牌，直到你的手牌达到 3 张。"
+      }
     },
     "stark_lab": {
       "expansion": "基础盒",
       "name": "斯塔克实验室",
       "slots": 4,
-      "initial": ["civ", "thug", "thug", null],
+      "initial": [
+        "civ",
+        "thug",
+        "thug",
+        null
+      ],
       "image": "res://assets/cards/locations/stark_lab.png",
-      "end_turn": { "type": "swap_story", "text": "回合结束：拿一张手牌，和故事情节里的一张卡牌做交换。" }
+      "end_turn": {
+        "type": "swap_story",
+        "text": "回合结束：拿一张手牌，和故事情节里的一张卡牌做交换。"
+      }
     },
     "times_square": {
       "expansion": "基础盒",
       "name": "时代广场",
       "slots": 5,
-      "initial": ["civ", "civ", "thug", null, null],
+      "initial": [
+        "civ",
+        "civ",
+        "thug",
+        null,
+        null
+      ],
       "image": "res://assets/cards/locations/times_square.png",
-      "end_turn": { "type": "rescue_civ", "text": "回合结束：你可以营救本地点的 1 名平民。" }
+      "end_turn": {
+        "type": "rescue_civ",
+        "text": "回合结束：你可以营救本地点的 1 名平民。"
+      }
     },
     "helicarrier": {
       "expansion": "基础盒",
       "name": "神盾局天空母舰",
       "slots": 4,
-      "initial": ["civ", "thug", "thug", null],
+      "initial": [
+        "civ",
+        "thug",
+        "thug",
+        null
+      ],
       "image": "res://assets/cards/locations/helicarrier.png",
-      "end_turn": { "type": "move_anywhere", "text": "回合结束：你可以移动到任意一个地点。" }
+      "end_turn": {
+        "type": "move_anywhere",
+        "text": "回合结束：你可以移动到任意一个地点。"
+      }
     },
     "shield_hq": {
       "expansion": "基础盒",
       "name": "神盾局总部",
       "slots": 4,
-      "initial": ["civ", "thug", null, null],
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
       "image": "res://assets/cards/locations/shield_hq.png",
-      "end_turn": { "type": "remove_crisis", "text": "回合结束：将一张手牌放到自己牌库底部，移除场上任意一处的 1 个危机指示物。" }
+      "end_turn": {
+        "type": "remove_crisis",
+        "text": "回合结束：将一张手牌放到自己牌库底部，移除场上任意一处的 1 个危机指示物。"
+      }
     },
     "nypd_hq": {
       "expansion": "基础盒",
       "name": "纽约警察局总部",
       "slots": 4,
-      "initial": ["civ", "civ", "thug", null],
+      "initial": [
+        "civ",
+        "civ",
+        "thug",
+        null
+      ],
       "image": "res://assets/cards/locations/nypd_hq.png",
-      "end_turn": { "type": "defeat_thug", "text": "回合结束：可以消灭本地点的 1 个暴徒。" }
+      "end_turn": {
+        "type": "defeat_thug",
+        "text": "回合结束：可以消灭本地点的 1 个暴徒。"
+      }
+    },
+    "hala": {
+      "expansion": "无限战争",
+      "name": "哈拉",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/hala.png",
+      "end_turn": {
+        "type": "swap_story",
+        "text": "回合结束：你可以将你手中的一张牌与故事情节中你的一张正面朝上的卡交换。"
+      }
+    },
+    "asgard": {
+      "expansion": "无限战争",
+      "name": "阿斯加德",
+      "slots": 3,
+      "initial": [
+        null,
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/asgard.png",
+      "end_turn": {
+        "type": "draw_if_hand_le2",
+        "text": "回合结束：如果你的手牌为 1 或 2 张，你可以抽取 1 张牌。"
+      }
+    },
+    "nidavellir": {
+      "expansion": "无限战争",
+      "name": "尼达维利尔",
+      "slots": 3,
+      "initial": [
+        "civ",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/nidavellir.png",
+      "end_turn": {
+        "type": "gain_attack_2",
+        "text": "回合结束：你可以获得 1 个攻击指示物，且可以将 1 张手牌放到牌库底，然后再获得 1 个攻击指示物。"
+      }
+    },
+    "sanctum": {
+      "expansion": "无限战争",
+      "name": "至圣所",
+      "slots": 3,
+      "initial": [
+        "civ",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/sanctum.png",
+      "end_turn": {
+        "type": "place_threat_token",
+        "text": "回合结束：你可以在威胁卡或能量卡上放置一个对应的指示物。"
+      }
+    },
+    "vormir": {
+      "expansion": "无限战争",
+      "name": "沃米尔",
+      "slots": 4,
+      "initial": [
+        "thug",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/vormir.png",
+      "end_turn": {
+        "type": "ko_hero_clear_threat",
+        "text": "回合结束：你可以KO这个地点的另一个英雄，立即清除一张威胁卡。"
+      }
+    },
+    "nyc": {
+      "expansion": "无限战争",
+      "name": "纽约",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/nyc.png",
+      "end_turn": {
+        "type": "discard_token_draw",
+        "text": "回合结束：你可以弃置 1 个行动指示物，然后抽取 1 张牌。"
+      }
+    },
+    "sanctuary": {
+      "expansion": "无限战争决战",
+      "name": "圣殿",
+      "slots": 3,
+      "initial": [
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/sanctuary.png",
+      "end_turn": {
+        "type": "move_anywhere",
+        "text": "回合结束：你可以移动到任意地点。"
+      }
+    },
+    "titan": {
+      "expansion": "无限战争决战",
+      "name": "泰坦星",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "civ",
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/titan.png",
+      "end_turn": {
+        "type": "move_villain_here",
+        "text": "回合结束：你可以移动灭霸到该地点。"
+      }
+    },
+    "avengers_tower2": {
+      "expansion": "无限战争决战",
+      "name": "复仇者大厦",
+      "slots": 3,
+      "initial": [
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/avengers_tower2.png",
+      "end_turn": {
+        "type": "draw_to_3",
+        "text": "回合结束：你可以抽取手牌直到你有 3 张手牌为止。"
+      }
+    },
+    "quantum_tunnel": {
+      "expansion": "无限战争决战",
+      "name": "量子隧道",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/quantum_tunnel.png",
+      "end_turn": {
+        "type": "swap_story_2",
+        "text": "回合结束：你可以在故事情节中交换你选择的任何 2 张英雄卡的位置。"
+      }
+    },
+    "thanos_palace": {
+      "expansion": "无限战争决战",
+      "name": "灭霸宫殿",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/thanos_palace.png",
+      "end_turn": {
+        "type": "discard_bottom_gain_attack2",
+        "text": "回合结束：你可以将 1 张手牌放置在牌库底部，然后获得 2 个攻击指示物。"
+      }
+    },
+    "wakanda": {
+      "expansion": "无限战争决战",
+      "name": "瓦坎达原野",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "civ",
+        "civ",
+        "civ",
+        "civ"
+      ],
+      "image": "res://assets/cards/locations/wakanda.png",
+      "end_turn": {
+        "type": "give_energy_token",
+        "text": "回合结束：你可以让该地点的任意 1 名英雄获得 1 个能量指示物。"
+      }
+    },
+    "warrior_falls": {
+      "expansion": "瓦坎达",
+      "name": "勇士瀑布",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "thug",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/warrior_falls.png",
+      "end_turn": {
+        "type": "attack_once",
+        "text": "回合结束：你可以在该地点执行 1 个攻击。"
+      }
+    },
+    "great_mound": {
+      "expansion": "瓦坎达",
+      "name": "大土丘",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/great_mound.png",
+      "end_turn": {
+        "type": "remove_crisis_any",
+        "text": "回合结束：从任意地点删除 1 个危机指示物。"
+      }
+    },
+    "golden_city": {
+      "expansion": "瓦坎达",
+      "name": "黄金城",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/golden_city.png",
+      "end_turn": {
+        "type": "move_anywhere",
+        "text": "回合结束：你可以移动到任意地点。"
+      }
+    },
+    "jabari_village": {
+      "expansion": "瓦坎达",
+      "name": "贾巴里部落",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/jabari_village.png",
+      "end_turn": {
+        "type": "gain_wild_1",
+        "text": "回合结束：你可以获得 1 个万能行动指示物。"
+      }
+    },
+    "shuris_lab": {
+      "expansion": "瓦坎达",
+      "name": "苏睿的实验室",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/shuris_lab.png",
+      "end_turn": {
+        "type": "draw_to_3",
+        "text": "回合结束：你可以抽取卡牌直到你有 3 张手牌为止。"
+      }
+    },
+    "royal_palace": {
+      "expansion": "瓦坎达",
+      "name": "王宫",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "civ",
+        null,
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/royal_palace.png",
+      "end_turn": {
+        "type": "search_top",
+        "text": "回合结束：你可以在你的牌组中搜索任何一张牌，然后洗牌并将这张牌放在上面。"
+      }
+    },
+    "throne_room": {
+      "expansion": "阿斯加德",
+      "name": "王座大殿",
+      "slots": 5,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/throne_room.png",
+      "end_turn": {
+        "type": "move_hero_to_adjacent",
+        "text": "回合结束：你可以选择 1 名英雄，将该英雄移动到他所在地点的相邻地点。"
+      }
+    },
+    "asgardian_palace": {
+      "expansion": "阿斯加德",
+      "name": "阿斯加德宫殿",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/asgardian_palace.png",
+      "end_turn": {
+        "type": "discard_2_tokens_any",
+        "text": "回合结束：你可以将任意地点以任意组合弃置 2 个平民/暴徒指示物。"
+      }
+    },
+    "odins_vault": {
+      "expansion": "阿斯加德",
+      "name": "奥丁宝库",
+      "slots": 2,
+      "initial": [
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/odins_vault.png",
+      "end_turn": {
+        "type": "draw_if_hand_le2",
+        "text": "回合结束：如果你有 1 或 2 张手牌，你可以抽取 1 张牌。"
+      }
+    },
+    "bifrost_bridge": {
+      "expansion": "阿斯加德",
+      "name": "彩虹桥",
+      "slots": 3,
+      "initial": [
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/bifrost_bridge.png",
+      "end_turn": {
+        "type": "move_all_heroes_here",
+        "text": "回合结束：你可以将该地点的所有英雄移动到任意地点。"
+      }
+    },
+    "heimdall_observatory": {
+      "expansion": "阿斯加德",
+      "name": "海姆达尔天文台",
+      "slots": 4,
+      "initial": [
+        "civ",
+        null,
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/heimdall_observatory.png",
+      "end_turn": {
+        "type": "move_heroes_to_here",
+        "text": "回合结束：你可以移动任意名英雄从其他地点到该地点。"
+      }
+    },
+    "valhalla": {
+      "expansion": "阿斯加德",
+      "name": "瓦尔哈拉",
+      "slots": 4,
+      "initial": [
+        "civ",
+        "thug",
+        null,
+        null
+      ],
+      "image": "res://assets/cards/locations/valhalla.png",
+      "end_turn": {
+        "type": "valhalla_redraw",
+        "text": "回合结束：你可以将任意张手牌放置在牌库底，然后抽取等量的手牌（弃置所有手牌不会导致 KO）。"
+      }
     }
   }
 }

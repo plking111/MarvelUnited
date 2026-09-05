@@ -21,13 +21,14 @@ var _rule_pages: Array = []
 var _rule_page_idx: int = 0
 
 func _ready() -> void:
+	UiKit.preload_scene("res://src/ui/OnlinePrep.tscn")
 	_build_menu()
 	_build_settings_panel()
 	_build_rules_ui()
 	_load_rules_data()
 
 func _load_rules_data() -> void:
-	var f := FileAccess.open("res://data/rules.json", FileAccess.READ)
+	var f := FileAccess.open(DB._resolve_data_path("res://data/rules.json"), FileAccess.READ)
 	if f != null:
 		var parsed = JSON.parse_string(f.get_as_text())
 		if parsed is Dictionary:
@@ -42,25 +43,45 @@ func _build_menu() -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 
-	var start := _mk_btn("开始游戏", Color(0.3, 0.5, 0.8))
-	start.position = Vector2(830, 490)
-	start.pressed.connect(func(): get_tree().change_scene_to_file("res://src/ui/Setup.tscn"))
-	add_child(start)
+	var btn_path := "res://assets/ui/buttons/"
+	# 按钮按素材比例 ~3.40:1（保留图案+外围黑色描边）等比例显示：宽 360 × 高 ~106
+	# 四枚纵排居中，整体下移（中心 x≈960，上缘 y≈535）
+	var bw := 360.0
+	var bh := bw / 3.404
+	var gap := 20.0
+	var top := 535.0
 
-	var rules := _mk_btn("规则详情", Color(0.4, 0.5, 0.3))
-	rules.position = Vector2(830, 570)
+	var start := UiKit.image_button("开始游戏", btn_path + "menu_1.png")
+	start.position = Vector2((1920.0 - bw) / 2.0, top)
+	start.custom_minimum_size = Vector2(bw, bh)
+	start.size = Vector2(bw, bh)
+	start.pressed.connect(func(): UiKit.goto_scene("res://src/ui/OnlinePrep.tscn"))
+	add_child(start)
+	UiKit.slide_in(start, 60, 0.0)
+
+	var rules := UiKit.image_button("规则详情", btn_path + "menu_2.png")
+	rules.position = Vector2((1920.0 - bw) / 2.0, top + (bh + gap))
+	rules.custom_minimum_size = Vector2(bw, bh)
+	rules.size = Vector2(bw, bh)
 	rules.pressed.connect(_open_rules)
 	add_child(rules)
+	UiKit.slide_in(rules, 60, 0.06)
 
-	var settings := _mk_btn("设置", Color(0.4, 0.4, 0.5))
-	settings.position = Vector2(830, 650)
+	var settings := UiKit.image_button("设置", btn_path + "menu_3.png")
+	settings.position = Vector2((1920.0 - bw) / 2.0, top + (bh + gap) * 2)
+	settings.custom_minimum_size = Vector2(bw, bh)
+	settings.size = Vector2(bw, bh)
 	settings.pressed.connect(_toggle_settings)
 	add_child(settings)
+	UiKit.slide_in(settings, 60, 0.12)
 
-	var quit := _mk_btn("退出游戏", Color(0.6, 0.3, 0.3))
-	quit.position = Vector2(830, 730)
+	var quit := UiKit.image_button("退出游戏", btn_path + "menu_4.png")
+	quit.position = Vector2((1920.0 - bw) / 2.0, top + (bh + gap) * 3)
+	quit.custom_minimum_size = Vector2(bw, bh)
+	quit.size = Vector2(bw, bh)
 	quit.pressed.connect(func(): get_tree().quit())
 	add_child(quit)
+	UiKit.slide_in(quit, 60, 0.18)
 
 func _build_settings_panel() -> void:
 	var overlay := ColorRect.new()
@@ -143,14 +164,39 @@ func _mk_btn(text: String, color: Color) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.add_theme_font_size_override("font_size", 24)
+	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	b.add_theme_constant_override("outline_size", 3)
 	b.custom_minimum_size = Vector2(260, 60)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = color
+	sb.border_color = Color(0, 0, 0, 0.95)  # 黑色描边
+	sb.set_border_width_all(3)
 	sb.corner_radius_top_left = 10
 	sb.corner_radius_top_right = 10
 	sb.corner_radius_bottom_left = 10
 	sb.corner_radius_bottom_right = 10
 	b.add_theme_stylebox_override("normal", sb)
+	# 按下/悬停保持黑边
+	var sb_hover := StyleBoxFlat.new()
+	sb_hover.bg_color = color.lightened(0.15)
+	sb_hover.border_color = Color(0, 0, 0, 0.95)
+	sb_hover.set_border_width_all(3)
+	sb_hover.corner_radius_top_left = 10
+	sb_hover.corner_radius_top_right = 10
+	sb_hover.corner_radius_bottom_left = 10
+	sb_hover.corner_radius_bottom_right = 10
+	b.add_theme_stylebox_override("hover", sb_hover)
+	var sb_pressed := StyleBoxFlat.new()
+	sb_pressed.bg_color = color.darkened(0.2)
+	sb_pressed.border_color = Color(0, 0, 0, 0.95)
+	sb_pressed.set_border_width_all(3)
+	sb_pressed.corner_radius_top_left = 10
+	sb_pressed.corner_radius_top_right = 10
+	sb_pressed.corner_radius_bottom_left = 10
+	sb_pressed.corner_radius_bottom_right = 10
+	b.add_theme_stylebox_override("pressed", sb_pressed)
+	UiKit.attach_jelly(b)
 	return b
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -311,7 +357,7 @@ func _open_rule(book_id: String) -> void:
 		return
 	_rule_pages = []
 	for i in range(pages):
-		_rule_pages.append("res://assets/rules/%s_rules_%02d.png" % [book_id, i + 1])
+		_rule_pages.append("res://assets/rules/%s_rules_%02d.jpg" % [book_id, i + 1])
 	_rule_page_idx = 0
 	_rule_view_title.text = title
 	_show_rule_page()

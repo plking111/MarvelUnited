@@ -6,6 +6,8 @@ var villains: Dictionary = {}
 var locations: Dictionary = {}
 var missions: Array = []
 var challenges: Array = []
+var stones: Array = []
+var energy_cards: Array = []
 
 func _ready() -> void:
 	load_data()
@@ -17,18 +19,33 @@ func load_data() -> void:
 	var m = _load_json("res://data/missions.json")
 	missions = m.get("missions", [])
 	challenges = m.get("challenges", [])
-	assert(heroes.size() == 5, "英雄数据应有5位")
-	assert(villains.size() == 3, "反派数据应有3个")
-	assert(locations.size() == 8, "地点数据应有8张")
+	var inf = _load_json("res://data/infinity.json")
+	stones = inf.get("stones", [])
+	energy_cards = inf.get("energy_cards", [])
+	assert(heroes.size() >= 5, "英雄数据应至少5位")
+	assert(villains.size() == 9, "反派数据应有9个")
+	assert(locations.size() == 32, "地点数据应有32张")
 	assert(missions.size() == 3, "任务卡应有3张")
+	assert(stones.size() == 6, "无限宝石应有6颗")
 
 func _load_json(path: String) -> Dictionary:
-	var f := FileAccess.open(path, FileAccess.READ)
+	var f := FileAccess.open(_resolve_data_path(path), FileAccess.READ)
 	assert(f != null, "无法打开数据文件: " + path)
 	var text := f.get_as_text()
 	var parsed = JSON.parse_string(text)
 	assert(parsed != null, "JSON 解析失败: " + path)
 	return parsed
+
+## 数据文件解析：优先读 exe 同目录的 data/ 外置文件夹（使数据可分开放置、便于热改），
+## 找不到则回退到 pck 内 res://data/（保证编辑器/开发模式可用）。
+## path 形如 "res://data/heroes.json"。
+static func _resolve_data_path(path: String) -> String:
+	var rel := path.get_slice("res://data/", 1)  # "heroes.json"
+	var base_dir := OS.get_executable_path().get_base_dir()
+	var ext := base_dir.path_join("data").path_join(rel)
+	if FileAccess.file_exists(ext):
+		return ext
+	return path
 
 ## 返回英雄的卡牌数组（12张）
 func hero_cards(hero_id: String) -> Array:

@@ -9,7 +9,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 	var s1: bool = inst._step_pages[1].visible
 	print("初始 step1=", s1)
-	# 模式图标网格：27 个按钮 + 名称白字
+	# 模式图标网格：28 个按钮 + 名称白字
 	var mode_count: int = inst._mode_buttons.size()
 	print("模式按钮数=", mode_count)
 	var gray_mat_ok: bool = inst._gray_mat != null
@@ -21,7 +21,12 @@ func _ready() -> void:
 		if tr.material != null:
 			all_color_default = false
 	print("初始全彩色=", all_color_default)
+	# 未选模式时确定按钮应禁用
+	var next_disabled_init: bool = inst._nav_next.disabled
+	print("未选模式时确定禁用=", next_disabled_init)
 	inst._on_mode_selected(1)
+	var next_disabled_after: bool = inst._nav_next.disabled
+	print("选中模式后确定禁用=", next_disabled_after)
 	var gray_ok: bool = true
 	for num in inst._mode_buttons:
 		var tr: TextureRect = inst._mode_buttons[num].get_child(0)
@@ -65,12 +70,14 @@ func _ready() -> void:
 	for i in range(5):
 		await get_tree().process_frame
 	var s3: bool = inst._step_pages[3].visible
-	print("地点页可见=", s3)
+	print("反派页可见=", s3)
+	# 反派页：基础模式需先选反派才能到地点页
+	inst._on_villain_selected("redskull")
 	inst._on_next()
 	for i in range(5):
 		await get_tree().process_frame
 	var s4: bool = inst._step_pages[4].visible
-	print("反派页可见=", s4)
+	print("地点页可见=", s4)
 	# 地点扩展：默认勾选基础盒；取消后再次勾选
 	print("扩展选择=", str(inst._selected_expansions))
 	inst._toggle_expansion(false, "基础盒")
@@ -83,8 +90,9 @@ func _ready() -> void:
 		if img != null:
 			img.save_png("F:/桌游相关/漫威联合/电子游戏/devtools/v48_locations.png")
 	var ok: bool = s1 and s2 and s3 and s4 and after_uncheck.size() == 0 and inst._selected_expansions.has("基础盒") \
-		and mode_count == 27 and gray_mat_ok and all_color_default and gray_ok \
-		and nav_text_ok and modal_shown and still_step1 and inst._modal == null
+		and mode_count == 28 and gray_mat_ok and all_color_default and gray_ok \
+		and nav_text_ok and modal_shown and still_step1 and inst._modal == null \
+		and next_disabled_init and not next_disabled_after
 	if ok:
 		print("=== 4STEP TEST PASSED ===")
 		get_tree().quit(0)

@@ -9,8 +9,9 @@ extends Control
 const LOC_CARD_SIZE := 230.0
 
 # 地点槽位位置模板（按格数，比例相对卡片左上角，来自用户实测）
-# 3格 y=0.199 x=[0.340,0.504,0.657]；4格 y=0.192 x=[0.290,0.418,0.580,0.724]；5格 y=0.192 x=[0.199,0.351,0.498,0.660,0.788]
+# 2格 y=0.199 x=[0.42,0.58]；3格 y=0.199 x=[0.340,0.504,0.657]；4格 y=0.192 x=[0.290,0.418,0.580,0.724]；5格 y=0.192 x=[0.199,0.351,0.498,0.660,0.788]
 const SLOT_TEMPLATES := {
+	2: {"y": 0.199, "x": [0.42, 0.58]},
 	3: {"y": 0.199, "x": [0.340, 0.504, 0.657]},
 	4: {"y": 0.192, "x": [0.290, 0.418, 0.580, 0.724]},
 	5: {"y": 0.192, "x": [0.199, 0.351, 0.498, 0.660, 0.788]},
@@ -25,12 +26,14 @@ var card: TextureRect
 var name_label: Label
 var threat: TextureRect
 var threat_label: Label
+var threat_hp_icon: TextureRect
 var slots: Array = []          # [{"icon": TextureRect, "empty": ColorRect}]
 var crisis_icon: TextureRect
 var crisis_label: Label
 var threat_slot: ColorRect
 var threat_marker: TextureRect
 var heroic_slots: Array = []
+var _endangered_icon: TextureRect   # 濒危地点：守卫指示物（地点左上角）
 
 var _icon_civ: Texture2D
 var _icon_thug: Texture2D
@@ -100,9 +103,17 @@ func setup(idx: int, pos: Vector2, bank: Dictionary, on_clicked: Callable) -> vo
 		sr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		threat.add_child(sr)
 		heroic_slots.append(sr)
-	# 爪牙生命值标签（威胁卡左下角；普通威胁不显示）
+	# 爪牙生命值（威胁卡左下角；图标 + 数字；普通威胁不显示）
+	threat_hp_icon = TextureRect.new()
+	threat_hp_icon.texture = load("res://assets/tokens/hp_icon.png")
+	threat_hp_icon.custom_minimum_size = Vector2(20, 20)
+	threat_hp_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	threat_hp_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	threat_hp_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	threat_hp_icon.visible = false
+	add_child(threat_hp_icon)
 	threat_label = Label.new()
-	threat_label.add_theme_font_size_override("font_size", 13)
+	threat_label.add_theme_font_size_override("font_size", 15)
 	threat_label.add_theme_color_override("font_color", Color(1, 0.9, 0.5))
 	threat_label.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 	threat_label.add_theme_constant_override("outline_size", 5)
@@ -131,6 +142,13 @@ func setup(idx: int, pos: Vector2, bank: Dictionary, on_clicked: Callable) -> vo
 	crisis_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	crisis_icon.visible = false
 	add_child(crisis_icon)
+	# 濒危地点守卫指示物（地点卡左上角）
+	_endangered_icon = TextureRect.new()
+	_endangered_icon.custom_minimum_size = Vector2(40, 40)
+	_endangered_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_endangered_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_endangered_icon.visible = false
+	add_child(_endangered_icon)
 	crisis_label = Label.new()
 	crisis_label.add_theme_font_size_override("font_size", 15)
 	crisis_label.add_theme_color_override("font_color", Color(0.85, 0.85, 1))
@@ -144,13 +162,17 @@ func refresh(state: Dictionary) -> void:
 	var l: Dictionary = state["locations"][i]
 	card.texture = load(DB.location_image(l["id"]))
 	name_label.text = DB.location_name(l["id"])
-	# 槽位填充：先平民后暴徒
+	# 槽位填充：先平民后暴徒；基尔格蒙时危机也占槽位
 	var slots_total: int = int(DB.location(l["id"])["slots"])
 	var fill: Array = []
 	for ci in range(l["civ"]):
 		fill.append("civ")
 	for ti in range(l["thug"]):
 		fill.append("thug")
+	var km: bool = state.get("villain", "") == "kilmonger"
+	if km:
+		for ki in range(l["crisis"]):
+			fill.append("crisis")
 	# 槽位按格数模板定位（对齐卡面白色方块）
 	var tpl: Dictionary = SLOT_TEMPLATES[slots_total]
 	var ratios: Array = tpl["x"]
@@ -165,7 +187,7 @@ func refresh(state: Dictionary) -> void:
 			empty.position = Vector2(sx - 12, sy - 12)
 			if si < fill.size():
 				var kind: String = fill[si]
-				icon.texture = _icon_civ if kind == "civ" else _icon_thug
+				icon.texture = _icon_civ if kind == "civ" else (_icon_thug if kind == "thug" else _icon_crisis)
 				icon.visible = true
 				empty.visible = false
 			else:
@@ -174,8 +196,11 @@ func refresh(state: Dictionary) -> void:
 		else:
 			icon.visible = false
 			empty.visible = false
-	# 危机
-	if l["crisis"] > 0:
+	# 危机：基尔格蒙时已填充到槽位（不再右下角）；否则单独显示右下角
+	if km:
+		crisis_icon.visible = false
+		crisis_label.visible = false
+	elif l["crisis"] > 0:
 		crisis_icon.texture = _icon_crisis
 		crisis_icon.position = crisis_label.position + Vector2(-30, 2)
 		crisis_icon.visible = true
@@ -184,6 +209,22 @@ func refresh(state: Dictionary) -> void:
 	else:
 		crisis_icon.visible = false
 		crisis_label.visible = false
+	# 濒危地点：守卫指示物（地点卡左上角；按守护玩家的序号显示对应数字指示物）
+	_endangered_icon.visible = false
+	if state.get("challenge", "") == "endangered":
+		var end: Dictionary = state.get("endangered", {})
+		if end.has("setup_done"):
+			for hid in state["hero_ids"]:
+				if int(end.get(hid, -1)) == i:
+					var idx: int = state["hero_ids"].find(hid)   # 玩家序号0-based
+					var num: int = idx + 1                        # 指示物数字 1-4
+					var tex: Texture2D = load("res://assets/tokens/endangered_%d.png" % num)
+					_endangered_icon.texture = tex
+					# 地点卡右上角、超出边缘少许
+					var tl: Vector2 = _pos - Vector2(LOC_CARD_SIZE / 2, LOC_CARD_SIZE / 2)
+					_endangered_icon.position = tl + Vector2(LOC_CARD_SIZE - 20, -14)
+					_endangered_icon.visible = true
+					break
 	# 威胁卡：完整小卡，上部 3/5 覆盖底部效果框，下部 2/5 伸出卡片边缘
 	if l["threat"] != null:
 		var t: Dictionary = l["threat"]
@@ -205,16 +246,21 @@ func refresh(state: Dictionary) -> void:
 		threat.visible = true
 		# 爪牙生命值显示在威胁卡左下角（普通威胁无生命不显示）
 		if t["hp"] > 0:
-			threat_label.text = "❤%d" % t["hp"]
-			threat_label.position = _pos + Vector2(-tw / 2 + 2, LOC_CARD_SIZE / 2 - th * 0.6 + th - 18)
+			threat_label.text = "%d" % t["hp"]
+			var hp_pos: Vector2 = _pos + Vector2(-tw / 2 + 2, LOC_CARD_SIZE / 2 - th * 0.6 + th - 18)
+			threat_label.position = hp_pos + Vector2(22, 0)
 			threat_label.visible = true
+			threat_hp_icon.position = hp_pos
+			threat_hp_icon.visible = true
 		else:
 			threat_label.visible = false
+			threat_hp_icon.visible = false
 		# 非爪牙威胁卡：下半部分 3 个英勇槽（偏白圆环）+ 英勇指示物进度
 		_update_threat_heroic_slots(t)
 	else:
 		threat.visible = false
 		threat_label.visible = false
+		threat_hp_icon.visible = false
 	# 左下角威胁指示物：有威胁卡时显示，清除威胁后隐藏
 	threat_marker.visible = l["threat"] != null
 	# 反派所在地高亮
@@ -236,7 +282,7 @@ func _update_threat_heroic_slots(t: Dictionary) -> void:
 			continue
 		sr.visible = true
 		sr.custom_minimum_size = Vector2(size, size)
-		sr.position = Vector2(float(xs[si]) * tw - size / 2.0, sy * th - size / 2.0)
+		sr.position = Vector2(float(xs[si]) * tw - size / 2.0, sy * th - size / 2.0 + 4.0)
 		sr.modulate = Color(1, 1, 1, 1.0) if si < tokens else Color(1, 1, 1, 0.3)
 
 func _threat_image_path(state: Dictionary, t: Dictionary) -> String:

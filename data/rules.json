@@ -1,94 +1,31 @@
 {
-    "books":  [
-                  {
-                      "pages":  12,
-                      "name":  "漫威联合：基础版",
-                      "id":  "base",
-                      "available":  true
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：X战警",
-                      "id":  "xmen",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：神奇四侠",
-                      "id":  "fantastic4",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：灭霸",
-                      "id":  "thanos",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：无限手套",
-                      "id":  "gauntlet",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：多元宇宙",
-                      "id":  "multiverse",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：蜘蛛侠宇宙",
-                      "id":  "spiderverse",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：诸界之战",
-                      "id":  "asgard",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：死侍与亡灵",
-                      "id":  "deadpool",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：内战",
-                      "id":  "civilwar",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：复仇者集结",
-                      "id":  "avengers",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：银河护卫队",
-                      "id":  "guardians",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：至尊魔法师",
-                      "id":  "doctorstrange",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：毒液",
-                      "id":  "venom",
-                      "available":  false
-                  },
-                  {
-                      "pages":  0,
-                      "name":  "漫威联合：征服者康",
-                      "id":  "kang",
-                      "available":  false
-                  }
-              ]
+    "books": [
+        { "pages": 12, "name": "漫威联合：基础游戏", "id": "base", "available": true },
+        { "pages": 16, "name": "漫威联合：X战警", "id": "xmen", "available": true },
+        { "pages": 15, "name": "漫威联合：多元宇宙", "id": "multiverse", "available": true },
+        { "pages": 8, "name": "漫威联合：无限战争", "id": "thanos", "available": true },
+        { "pages": 2, "name": "漫威联合：黑豹", "id": "blackpanther", "available": true },
+        { "pages": 2, "name": "漫威联合：阿斯加德", "id": "asgard", "available": true },
+        { "pages": 2, "name": "漫威联合：银河护卫队", "id": "guardians", "available": true },
+        { "pages": 2, "name": "漫威联合：蜘蛛侠扩展", "id": "spiderman", "available": true },
+        { "pages": 3, "name": "漫威联合：邪恶六人组", "id": "sinister6", "available": true },
+        { "pages": 4, "name": "漫威联合：金队VS蓝队", "id": "goldblue", "available": true },
+        { "pages": 2, "name": "漫威联合：第一战", "id": "firstclass", "available": true },
+        { "pages": 2, "name": "漫威联合：X特攻队", "id": "xforce", "available": true },
+        { "pages": 4, "name": "漫威联合：凤凰五人组", "id": "phoenix5", "available": true },
+        { "pages": 4, "name": "漫威联合：昔日未来", "id": "daysfuture", "available": true },
+        { "pages": 2, "name": "漫威联合：死侍混乱", "id": "deadpool", "available": true },
+        { "pages": 2, "name": "漫威联合：神奇四侠", "id": "fantastic4", "available": true },
+        { "pages": 16, "name": "漫威联合：蜘蛛侠宇宙", "id": "spiderverse", "available": true },
+        { "pages": 8, "name": "漫威联合：内战", "id": "civilwar", "available": true },
+        { "pages": 2, "name": "漫威联合：破界浩克", "id": "hulkworld", "available": true },
+        { "pages": 4, "name": "漫威联合：屠杀来袭", "id": "carnage", "available": true },
+        { "pages": 7, "name": "漫威联合：行星吞噬者降临", "id": "galactus", "available": true },
+        { "pages": 2, "name": "漫威联合：秘密战争", "id": "secretwar", "available": true },
+        { "pages": 2, "name": "漫威联合：困境挑战", "id": "dilemma", "available": true },
+        { "pages": 2, "name": "漫威联合：异人族", "id": "inhumans", "available": true },
+        { "pages": 2, "name": "漫威联合：天启纪元", "id": "apocalypseage", "available": true },
+        { "pages": 4, "name": "漫威联合：天启", "id": "apocalypse", "available": true },
+        { "pages": 2, "name": "漫威联合：非凡龙", "id": "finfang", "available": true }
+    ]
 }

@@ -12,3 +12,6 @@ build/
 .DS_Store
 Thumbs.db
 *.tmp
+
+# 测试日志
+*.log

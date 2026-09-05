@@ -1,0 +1,210 @@
+{
+  "stones": [
+    {
+      "id": "mind",
+      "name": "心灵宝石",
+      "text": "从现在开始，英雄们打出卡牌时均为随机打出",
+      "persistent": true,
+      "image": "res://assets/cards/stones/stone_01.png"
+    },
+    {
+      "id": "power",
+      "name": "力量宝石",
+      "text": "立即效果：对所有英雄造成 1 点伤害，无论他们在哪里",
+      "persistent": false,
+      "image": "res://assets/cards/stones/stone_02.png"
+    },
+    {
+      "id": "reality",
+      "name": "现实宝石",
+      "text": "立即效果：将所有已完成的任务重新激活（重新激活的任务从头开始，并回到对应完成任务前的状态）",
+      "persistent": false,
+      "image": "res://assets/cards/stones/stone_03.png"
+    },
+    {
+      "id": "soul",
+      "name": "灵魂宝石",
+      "text": "立即效果：灭霸获得 6 点生命值（可以超过生命值上限）",
+      "persistent": false,
+      "image": "res://assets/cards/stones/stone_04.png"
+    },
+    {
+      "id": "space",
+      "name": "空间宝石",
+      "text": "从现在开始：英雄们忽略回合中的第一个移动行动",
+      "persistent": true,
+      "image": "res://assets/cards/stones/stone_05.png"
+    },
+    {
+      "id": "time",
+      "name": "时间宝石",
+      "text": "立即效果：反派立刻抽取并执行两张行动卡",
+      "persistent": false,
+      "image": "res://assets/cards/stones/stone_06.png"
+    }
+  ],
+  "energy_cards": [
+    {
+      "id": "e1",
+      "name": "能量卡·狂怒",
+      "slots": [
+        [
+          "heroic",
+          "heroic"
+        ],
+        [
+          "heroic",
+          "heroic"
+        ]
+      ],
+      "cost": [
+        "attack",
+        "attack"
+      ],
+      "gain": [
+        "heroic"
+      ],
+      "effect_text": "每拥有 2 个攻击行动 → 获得 1 个英勇行动",
+      "image": "res://assets/cards/energy/energy_01.png"
+    },
+    {
+      "id": "e2",
+      "name": "能量卡·疾行",
+      "slots": [
+        [
+          "heroic",
+          "heroic"
+        ],
+        [
+          "heroic",
+          "heroic"
+        ]
+      ],
+      "cost": [
+        "move",
+        "move"
+      ],
+      "gain": [
+        "heroic"
+      ],
+      "effect_text": "每拥有 2 个移动行动 → 获得 1 个英勇行动",
+      "image": "res://assets/cards/energy/energy_02.png"
+    },
+    {
+      "id": "e3",
+      "name": "能量卡·壁垒",
+      "slots": [
+        [
+          "attack",
+          "attack"
+        ],
+        [
+          "attack",
+          "attack"
+        ]
+      ],
+      "cost": [
+        "heroic",
+        "heroic"
+      ],
+      "gain": [
+        "attack"
+      ],
+      "effect_text": "每拥有 2 个英勇行动 → 获得 1 个攻击行动",
+      "image": "res://assets/cards/energy/energy_03.png"
+    },
+    {
+      "id": "e4",
+      "name": "能量卡·突袭",
+      "slots": [
+        [
+          "attack",
+          "attack"
+        ],
+        [
+          "attack",
+          "attack"
+        ]
+      ],
+      "cost": [
+        "move",
+        "move"
+      ],
+      "gain": [
+        "attack"
+      ],
+      "effect_text": "花费2移动→获得1攻击",
+      "image": "res://assets/cards/energy/energy_04.png"
+    },
+    {
+      "id": "e5",
+      "name": "能量卡·神速",
+      "slots": [
+        [
+          "move",
+          "move"
+        ],
+        [
+          "move",
+          "move"
+        ]
+      ],
+      "cost": [
+        "attack",
+        "attack"
+      ],
+      "gain": [
+        "move"
+      ],
+      "effect_text": "每拥有 2 个攻击行动 → 获得 1 个移动行动",
+      "image": "res://assets/cards/energy/energy_05.png"
+    },
+    {
+      "id": "e6",
+      "name": "能量卡·守护",
+      "slots": [
+        [
+          "move",
+          "move"
+        ],
+        [
+          "move",
+          "move"
+        ]
+      ],
+      "cost": [
+        "heroic",
+        "heroic"
+      ],
+      "gain": [
+        "move"
+      ],
+      "effect_text": "每拥有 2 个英勇行动 → 获得 1 个移动行动",
+      "image": "res://assets/cards/energy/energy_06.png"
+    },
+    {
+      "id": "e7",
+      "name": "能量卡·全能",
+      "slots": [
+        [
+          "attack",
+          "heroic"
+        ],
+        [
+          "move",
+          "threat"
+        ]
+      ],
+      "cost": [
+        "attack",
+        "heroic",
+        "move"
+      ],
+      "gain": [
+        "wild"
+      ],
+      "effect_text": "每拥有 攻击+英勇+移动 各 1 个 → 获得 1 个万能行动",
+      "image": "res://assets/cards/energy/energy_07.png"
+    }
+  ]
+}

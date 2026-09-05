@@ -5,7 +5,11 @@
     "color": "#7a1f1f",
     "image": "res://assets/cards/villains/redskull/panel.png",
     "back": "res://assets/cards/villains/redskull/back.png",
-    "health": { "2": 4, "3": 8, "4": 11 },
+    "health": {
+      "2": 4,
+      "3": 8,
+      "4": 11
+    },
     "bam": "对红骷髅所在地点全部英雄造成 1 点伤害，恐惧指示物推进 2 格。",
     "overflow": "无法放置平民/暴徒指示物时，恐惧轨道推进对应无法放置的指示物数量。",
     "plot": "恐惧轨道到达 20，英雄方失败。",
@@ -13,26 +17,231 @@
     "fear_track_max": 20,
     "special": "",
     "actions": [
-      { "move": 1, "bam": true,  "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
-      { "move": 2, "bam": true,  "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
-      { "move": 2, "bam": true,  "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
-      { "move": 3, "bam": false, "effect": null, "place": [["civ"], ["civ", "civ"], ["civ"]] },
-      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug", "thug", "civ", "civ"], ["thug", "civ"]] },
-      { "move": 4, "bam": true,  "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
-      { "move": 1, "bam": false, "effect": null, "place": [["thug"], ["thug", "thug"], ["thug"]] },
-      { "move": 0, "bam": true,  "effect": { "type": "redskull_emergency", "name": "红骷髅紧急", "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。" }, "place": null },
-      { "move": 0, "bam": true,  "effect": null, "place": null },
-      { "move": 0, "bam": true,  "effect": { "type": "redskull_emergency", "name": "红骷髅紧急", "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。" }, "place": null },
-      { "move": 0, "bam": true,  "effect": { "type": "hail_hydra", "name": "九头蛇万岁", "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。" }, "place": null },
-      { "move": 0, "bam": true,  "effect": { "type": "hail_hydra", "name": "九头蛇万岁", "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。" }, "place": null }
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "thug",
+            "civ",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "redskull_emergency",
+          "name": "红骷髅紧急",
+          "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "redskull_emergency",
+          "name": "红骷髅紧急",
+          "text": "英雄们每有一个危机指示物，将恐惧指示物推进一个。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "hail_hydra",
+          "name": "九头蛇万岁",
+          "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "hail_hydra",
+          "name": "九头蛇万岁",
+          "text": "从所有英雄地点弃置平民，并对每个英雄造成 1 点伤害。通过这种方式推进等于弃置平民数量的恐惧指示物。"
+        },
+        "place": null
+      }
     ],
     "threats": [
-      { "name": "九头蛇夫人", "text": "对该地点每个英雄造成 1 点伤害；英雄消耗 1 危机指示物免疫该伤害", "henchman_hp": 5, "bam": true, "arrival": false, "start_turn": false, "constant": false },
-      { "name": "洗脑", "text": "该地点与相邻地点的每位英雄获得 1 危机指示物", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
-      { "name": "九头蛇特工鲍勃", "text": "英雄在该地点开启回合时获得 1 危机指示物", "henchman_hp": 4, "bam": false, "arrival": false, "start_turn": false, "constant": false },
-      { "name": "颠覆", "text": "弃置本地点平民、暴徒；恐惧指示物推进等于弃置指示物数量", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
-      { "name": "交叉骨", "text": "对该地点每个英雄造成 2 点伤害；英雄消耗 2 危机指示物免疫该伤害", "henchman_hp": 6, "bam": true, "arrival": false, "start_turn": false, "constant": false },
-      { "name": "九头蛇精英部队", "text": "该地点每个暴徒需要 2 点伤害才能击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true }
+      {
+        "name": "九头蛇夫人",
+        "text": "对该地点每个英雄造成 1 点伤害；英雄消耗 1 危机指示物免疫该伤害",
+        "henchman_hp": 5,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "洗脑",
+        "text": "该地点与相邻地点的每位英雄获得 1 危机指示物",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "九头蛇特工鲍勃",
+        "text": "英雄在该地点开启回合时获得 1 危机指示物",
+        "henchman_hp": 4,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "颠覆",
+        "text": "弃置本地点平民、暴徒；恐惧指示物推进等于弃置指示物数量",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "交叉骨",
+        "text": "对该地点每个英雄造成 2 点伤害；英雄消耗 2 危机指示物免疫该伤害",
+        "henchman_hp": 6,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "九头蛇精英部队",
+        "text": "该地点每个暴徒需要 2 点伤害才能击败",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      }
     ]
   },
   "ultron": {
@@ -41,7 +250,11 @@
     "color": "#2e4d8a",
     "image": "res://assets/cards/villains/ultron/panel.png",
     "back": "res://assets/cards/villains/ultron/back.png",
-    "health": { "2": 4, "3": 8, "4": 11 },
+    "health": {
+      "2": 4,
+      "3": 8,
+      "4": 11
+    },
     "bam": "在奥创所在地点放置 3 个暴徒，对该地点每一名英雄造成 1 点伤害。",
     "overflow": "若无法在地点上放置平民或暴徒指示物，则将该指示物放到顺时针的下一处地点。",
     "plot": "当全部地点都被平民或暴徒完全占领，英雄方失败。",
@@ -49,26 +262,186 @@
     "fear_track_max": 0,
     "special": "",
     "actions": [
-      { "move": 2, "bam": true,  "effect": null, "place": null },
-      { "move": 2, "bam": true,  "effect": null, "place": null },
-      { "move": 3, "bam": true,  "effect": null, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "hypnotize", "name": "催眠", "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒" }, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "head_case", "name": "脑袋视线", "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物" }, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "head_case", "name": "脑袋视线", "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物" }, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "hypnotize", "name": "催眠", "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒" }, "place": null },
-      { "move": 4, "bam": true,  "effect": null, "place": null },
-      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug"], ["thug", "civ"]] },
-      { "move": 1, "bam": false, "effect": null, "place": [["thug"], ["thug", "thug", "thug"], ["thug"]] },
-      { "move": 1, "bam": false, "effect": null, "place": [["civ"], ["civ", "civ", "civ"], ["civ"]] },
-      { "move": 0, "bam": true,  "effect": null, "place": null }
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "hypnotize",
+          "name": "催眠",
+          "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "head_case",
+          "name": "脑袋视线",
+          "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "head_case",
+          "name": "脑袋视线",
+          "text": "每名带有危机指示物的英雄受到 1 点伤害；之后玩家选择一名英雄获得 1 个危机指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "hypnotize",
+          "name": "催眠",
+          "text": "奥创所在地点以及相邻地点的英雄各获得 1 个危机指示物；在这三个地点中，没有英雄的地点各放置 1 个暴徒"
+        },
+        "place": null
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      }
     ],
     "threats": [
-      { "name": "复制", "text": "该地点增加 1 个暴徒", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false },
-      { "name": "奥创病毒", "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": true, "constant": false },
-      { "name": "奥创克隆体", "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果", "henchman_hp": 4, "bam": true, "arrival": false, "start_turn": false, "constant": false },
-      { "name": "奥创病毒", "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": true, "constant": false },
-      { "name": "奥创克隆体", "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果", "henchman_hp": 4, "bam": true, "arrival": false, "start_turn": false, "constant": false },
-      { "name": "复制", "text": "该地点增加 1 个暴徒", "henchman_hp": 0, "bam": false, "arrival": true, "start_turn": false, "constant": false }
+      {
+        "name": "复制",
+        "text": "该地点增加 1 个暴徒",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "奥创病毒",
+        "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false
+      },
+      {
+        "name": "奥创克隆体",
+        "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果",
+        "henchman_hp": 4,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "奥创病毒",
+        "text": "在该地点开始回合的英雄，必须选择一个行动符号并忽略它",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false
+      },
+      {
+        "name": "奥创克隆体",
+        "text": "该地点增加 1 个暴徒；若该地点全部英雄都受到 1 点伤害，则阻止本效果",
+        "henchman_hp": 4,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "复制",
+        "text": "该地点增加 1 个暴徒",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      }
     ]
   },
   "taskmaster": {
@@ -77,7 +450,11 @@
     "color": "#3a3a55",
     "image": "res://assets/cards/villains/taskmaster/panel.png",
     "back": "res://assets/cards/villains/taskmaster/back.png",
-    "health": { "2": 2, "3": 4, "4": 6 },
+    "health": {
+      "2": 2,
+      "3": 4,
+      "4": 6
+    },
     "bam": "对模仿大师所在地点的每名英雄造成 1 点伤害，并在该地点放置 1 个危机指示物。",
     "overflow": "地点无法放置平民或暴徒指示物时，改为向该地点放置等量危机指示物。",
     "plot": "",
@@ -85,26 +462,1734 @@
     "fear_track_max": 0,
     "special": "只要地点存在危机指示物，英雄不能伤害该地点的模仿大师。英雄可在没有平民、暴徒的地点，消耗英勇或攻击行动清除 1 个危机指示物。",
     "actions": [
-      { "move": 0, "bam": true,  "effect": null, "place": null },
-      { "move": 1, "bam": true,  "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
-      { "move": 1, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] },
-      { "move": 2, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] },
-      { "move": 2, "bam": true,  "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
-      { "move": 3, "bam": false, "effect": null, "place": [["civ"], ["civ"], ["civ"]] },
-      { "move": 0, "bam": false, "effect": { "type": "mimic_heroic", "name": "模仿", "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的英勇符号数量的平民指示物" }, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "mimic_attack", "name": "模仿", "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的攻击符号数量的暴徒指示物" }, "place": null },
-      { "move": 5, "bam": false, "effect": null, "place": [["thug", "civ"], ["thug", "civ"], ["thug", "civ"]] },
-      { "move": 0, "bam": false, "effect": { "type": "dark_plan", "name": "黑暗的计划", "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物" }, "place": null },
-      { "move": 0, "bam": false, "effect": { "type": "dark_plan", "name": "黑暗的计划", "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物" }, "place": null },
-      { "move": 4, "bam": true,  "effect": null, "place": [["thug"], ["thug"], ["thug"]] }
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "mimic_heroic",
+          "name": "模仿",
+          "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的英勇符号数量的平民指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "mimic_attack",
+          "name": "模仿",
+          "text": "在该地点添加数量等于故事情节中最后两张英雄卡底部的攻击符号数量的暴徒指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "dark_plan",
+          "name": "黑暗的计划",
+          "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "dark_plan",
+          "name": "黑暗的计划",
+          "text": "如果在模仿大师的地点没有英雄，在该地点放置 1 个危机指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      }
     ],
     "threats": [
-      { "name": "精锐暴徒", "text": "该地点的每一个暴徒需要 2 点伤害才能被击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
-      { "name": "纠缠陷阱", "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
-      { "name": "爆炸陷阱", "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
-      { "name": "纠缠陷阱", "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
-      { "name": "精锐暴徒", "text": "该地点的每一个暴徒需要 2 点伤害才能被击败", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true },
-      { "name": "爆炸陷阱", "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救", "henchman_hp": 0, "bam": false, "arrival": false, "start_turn": false, "constant": true }
+      {
+        "name": "精锐暴徒",
+        "text": "该地点的每一个暴徒需要 2 点伤害才能被击败",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "纠缠陷阱",
+        "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "爆炸陷阱",
+        "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "纠缠陷阱",
+        "text": "英雄使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "精锐暴徒",
+        "text": "该地点的每一个暴徒需要 2 点伤害才能被击败",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "爆炸陷阱",
+        "text": "该地点的每一名平民，需要 2 个英勇行动才可以营救",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      }
+    ]
+  },
+  "thanos": {
+    "name": "灭霸",
+    "name_en": "Thanos",
+    "color": "#6a4a9a",
+    "image": "res://assets/cards/villains/thanos/panel.png",
+    "back": "res://assets/cards/villains/thanos/back.png",
+    "health": {
+      "2": 7,
+      "3": 10,
+      "4": 14
+    },
+    "bam": "对灭霸所在地点的每个英雄造成 2 点伤害，对不同地点的每个英雄造成 1 点伤害。",
+    "overflow": "无法放置暴徒指示物时：将该地点最左边的平民指示物转换为暴徒；若没有平民，则抽取一张反派行动卡。",
+    "plot": "被淘汰的英雄数量等于起始英雄数量时，英雄失败。",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "当英雄被 KO 时，灭霸不会激活他的 BAM！该英雄被从游戏中淘汰（出局），玩家选择新的英雄继续游戏。",
+    "actions": [
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": false,
+        "effect": {
+          "type": "mad_titan",
+          "name": "疯狂泰坦人",
+          "text": "灭霸回复最多 5 点生命值（不能超过上限），并对灭霸所在地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": {
+          "type": "mad_titan",
+          "name": "疯狂泰坦人",
+          "text": "灭霸回复最多 5 点生命值（不能超过上限），并对灭霸所在地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": {
+          "type": "thanos_mercy",
+          "name": "灭霸的怜悯",
+          "text": "灭霸所在地点和两个相邻地点，各丢弃 1 个平民指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": {
+          "type": "thanos_mercy",
+          "name": "灭霸的怜悯",
+          "text": "灭霸所在地点和两个相邻地点，各丢弃 1 个平民指示物"
+        },
+        "place": null
+      }
+    ],
+    "threats": [
+      {
+        "name": "暗夜比邻星",
+        "text": "BAM!：丢弃此地点的所有平民；若没有平民，则对 1 名英雄造成 1 点伤害（玩家选择，不限地点）",
+        "henchman_hp": 4,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "亡刃将军",
+        "text": "反派到达地点效果：将 2 个暴徒添加到此地点",
+        "henchman_hp": 5,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "致残酷刑",
+        "text": "该地点的每个暴徒都需要 3 点伤害才能被击败",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "乌木侯",
+        "text": "反派到达地点效果：执行当前反派行动后，立即打出另一张反派行动卡",
+        "henchman_hp": 4,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "致残酷刑",
+        "text": "该地点的每个暴徒都需要 3 点伤害才能被击败",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "黑矮星",
+        "text": "BAM!：对该地点的每个英雄造成 1 点伤害",
+        "henchman_hp": 6,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      }
+    ]
+  },
+  "proxima": {
+    "name": "暗夜比邻星",
+    "name_en": "Proxima Midnight",
+    "color": "#7a3a4a",
+    "image": "res://assets/cards/villains/proxima/panel.png",
+    "back": "res://assets/cards/villains/proxima/back.png",
+    "health": {
+      "2": 4,
+      "3": 7,
+      "4": 10
+    },
+    "bam": "对暗夜比邻星所在地点中的每个英雄造成 1 点伤害，丢弃她所在位置的所有平民指示物，并将屠宰轨迹增加（1+丢弃的平民指示物）数量。",
+    "overflow": "无法放置暴徒指示物时，对暗夜比邻星地点中的每个英雄造成 1 点伤害；无法放置平民指示物时，每有一个无法添加的平民，屠宰轨迹增加 1。",
+    "plot": "屠宰轨道到达 12，英雄方失败。",
+    "plot_track": "slaughter",
+    "fear_track_max": 12,
+    "special": "屠宰轨道：两行（0 / 1-12），到达 12 时英雄失败。",
+    "actions": [
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "purify",
+          "name": "净化",
+          "text": "丢弃两个相邻地点的所有平民指示物（不包括暗夜比邻星所在地点），并按丢弃数量增加屠宰轨迹；这些地点的英雄可选择受到 1 点伤害以保留 1 个平民（可多次）"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "hunt_spear",
+          "name": "狩猎长矛",
+          "text": "移动到下一个拥有最多平民的地点；丢弃该地点的所有平民指示物，并按丢弃数量增加屠宰轨迹；该地点的英雄可选择受到 1 点伤害以保留 1 个平民（可多次）"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "purify",
+          "name": "净化",
+          "text": "丢弃两个相邻地点的所有平民指示物（不包括暗夜比邻星所在地点），并按丢弃数量增加屠宰轨迹；这些地点的英雄可选择受到 1 点伤害以保留 1 个平民（可多次）"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "hunt_spear",
+          "name": "狩猎长矛",
+          "text": "移动到下一个拥有最多平民的地点；丢弃该地点的所有平民指示物，并按丢弃数量增加屠宰轨迹；该地点的英雄可选择受到 1 点伤害以保留 1 个平民（可多次）"
+        },
+        "place": null
+      }
+    ],
+    "threats": [
+      {
+        "name": "武学大师",
+        "text": "暗夜比邻星在这个地点，会忽略每个回合对她使用的第一个攻击行动",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "武学大师",
+        "text": "暗夜比邻星在这个地点，会忽略每个回合对她使用的第一个攻击行动",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "战俘营地",
+        "text": "在该地点的每个平民需要额外 1 个英勇行动才能被营救",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "战俘营地",
+        "text": "在该地点的每个平民需要额外 1 个英勇行动才能被营救",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "战术支援",
+        "text": "该地点的英雄在受到伤害时会受到额外 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "战术支援",
+        "text": "该地点的英雄在受到伤害时会受到额外 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      }
+    ]
+  },
+  "cull": {
+    "name": "黑矮星",
+    "name_en": "Cull Obsidian",
+    "color": "#4a4a3a",
+    "image": "res://assets/cards/villains/cull/panel.png",
+    "back": "res://assets/cards/villains/cull/back.png",
+    "health": {
+      "2": 6,
+      "3": 9,
+      "4": 12
+    },
+    "bam": "对黑矮星所在地点的每个英雄造成 1 点伤害。",
+    "overflow": "无法放置平民或暴徒指示物时，对该地点的每个英雄造成 1 点伤害。",
+    "plot": "",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "当英雄被 KO 时，黑矮星不会激活他的 BAM！相反，他打出另一张反派行动牌。",
+    "actions": [
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "axe_swing",
+          "name": "斧头摆动",
+          "text": "对黑矮星所在地点和相邻地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "axe_swing",
+          "name": "斧头摆动",
+          "text": "对黑矮星所在地点和相邻地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": {
+          "type": "heal_factor",
+          "name": "愈合因子",
+          "text": "黑矮星最多治疗 3 点生命值（不能超过上限）；如果生命值已满，则对他所在地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": {
+          "type": "heal_factor",
+          "name": "愈合因子",
+          "text": "黑矮星最多治疗 3 点生命值（不能超过上限）；如果生命值已满，则对他所在地点的每个英雄造成 1 点伤害"
+        },
+        "place": null
+      }
+    ],
+    "threats": [
+      {
+        "name": "链锤",
+        "text": "只要至少有一个链锤在场上，黑矮星的 BAM! 还对相邻地点的每个英雄造成 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "链锤",
+        "text": "只要至少有一个链锤在场上，黑矮星的 BAM! 还对相邻地点的每个英雄造成 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "冲锋",
+        "text": "反派到达地点效果：对该地点的每个英雄造成 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "冲锋",
+        "text": "反派到达地点效果：对该地点的每个英雄造成 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "超级坚甲",
+        "text": "只要至少有一个超级坚甲在场上，黑矮星每回合就会忽略 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "超级坚甲",
+        "text": "只要至少有一个超级坚甲在场上，黑矮星每回合就会忽略 1 点伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      }
+    ]
+  },
+  "ebony": {
+    "name": "乌木侯",
+    "name_en": "Ebony Maw",
+    "color": "#3a4a6a",
+    "image": "res://assets/cards/villains/ebony/panel.png",
+    "back": "res://assets/cards/villains/ebony/back.png",
+    "health": {
+      "2": 4,
+      "3": 7,
+      "4": 10
+    },
+    "bam": "乌木侯所在地点的每个英雄获得 1 个危机指示物并受到 1 点伤害。",
+    "overflow": "无法放置平民或暴徒指示物时，该地点的每个英雄获得 1 个危机指示物。",
+    "plot": "",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "拥有任何危机指示物的英雄必须在回合中改为随机打出他们的英雄卡，然后丢弃 1 个危机指示物。",
+    "actions": [
+      {
+        "move": 5,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug",
+            "civ",
+            "civ"
+          ],
+          [
+            "thug",
+            "thug",
+            "civ"
+          ],
+          [
+            "thug",
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "genius_intellect",
+          "name": "天才智力",
+          "text": "立即打出一些额外的反派行动卡，数量等于英雄们拥有的危机指示物总数（一张一张结算）"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "genius_intellect",
+          "name": "天才智力",
+          "text": "立即打出一些额外的反派行动卡，数量等于英雄们拥有的危机指示物总数（一张一张结算）"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "manipulate",
+          "name": "操纵",
+          "text": "移动到下一个拥有最多英雄的地点（相同则最近）；乌木侯所在地点中的每位英雄获得 1 个危机指示物"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "manipulate",
+          "name": "操纵",
+          "text": "移动到下一个拥有最多英雄的地点（相同则最近）；乌木侯所在地点中的每位英雄获得 1 个危机指示物"
+        },
+        "place": null
+      }
+    ],
+    "threats": [
+      {
+        "name": "劝诱",
+        "text": "反派到达地点效果：该地点的每个英雄获得 1 个危机指示物；若没有英雄，执行当前反派行动后再打一张反派行动卡",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "劝诱",
+        "text": "反派到达地点效果：该地点的每个英雄获得 1 个危机指示物；若没有英雄，执行当前反派行动后再打一张反派行动卡",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "念力",
+        "text": "反派到达地点效果：对这个地点和相邻地点的每个英雄造成伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "念力",
+        "text": "反派到达地点效果：对这个地点和相邻地点的每个英雄造成伤害",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "折磨摧残",
+        "text": "在此地点开始回合的英雄不会从故事情节中的前一张英雄卡中获得行动",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false
+      },
+      {
+        "name": "折磨摧残",
+        "text": "在此地点开始回合的英雄不会从故事情节中的前一张英雄卡中获得行动",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false
+      }
+    ]
+  },
+  "kilmonger": {
+    "name": "基尔格蒙",
+    "name_en": "Killmonger",
+    "color": "#8a6a3a",
+    "image": "res://assets/cards/villains/kilmonger/panel.png",
+    "back": "res://assets/cards/villains/kilmonger/back.png",
+    "health": {
+      "2": 6,
+      "3": 9,
+      "4": 12
+    },
+    "bam": "对基尔格蒙所在地点的每位英雄造成 1 点伤害，然后将该地点最左边的平民/暴徒指示物（如果存在）替换为 1 个危机指示物。",
+    "overflow": "如果有 1 个或更多平民/暴徒指示物无法添加到某个地点，将基尔格蒙所在地点最左边的平民/暴徒指示物（如果存在）替换为 1 个危机指示物。",
+    "plot": "",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "当 4 个或更多地点有 3 个或更多危机指示物时，英雄失败。",
+    "actions": [
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "km_overthrow",
+          "name": "推翻",
+          "text": "移动到拥有最多危机指示物的最近位置，并将那里所有的平民替换为危机指示物；如果那个地点都没有平民，则顺时针移动到下一个地点。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "km_overthrow",
+          "name": "推翻",
+          "text": "移动到拥有最多危机指示物的最近位置，并将那里所有的平民替换为危机指示物；如果那个地点都没有平民，则顺时针移动到下一个地点。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "km_duel",
+          "name": "决斗",
+          "text": "顺时针移动到有英雄的下一个地点。对基尔格蒙所在地点的 1 名英雄造成 2 点伤害（由英雄们选择分配）。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": {
+          "type": "km_duel",
+          "name": "决斗",
+          "text": "顺时针移动到有英雄的下一个地点。对基尔格蒙所在地点的 1 名英雄造成 2 点伤害（由英雄们选择分配）。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "thug"
+          ],
+          [
+            "civ",
+            "thug"
+          ],
+          [
+            "civ",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "civ",
+            "thug"
+          ],
+          [
+            "civ",
+            "civ",
+            "thug"
+          ],
+          [
+            "civ",
+            "civ",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      }
+    ],
+    "threats": [
+      {
+        "name": "暗杀企图",
+        "text": "在该地点结束回合的英雄受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "武器走私",
+        "text": "到达地点效果：在该地点的一个空位放置 1 个危机指示物；如果所有位置都已满，则将最左边的平民/暴徒指示物替换为危机指示物。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "雇佣兵",
+        "text": "该地点的每个暴徒需要受到 2 点伤害才能被击败。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "武器走私",
+        "text": "到达地点效果：在该地点的一个空位放置 1 个危机指示物；如果所有位置都已满，则将最左边的平民/暴徒指示物替换为危机指示物。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": true,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "雇佣兵",
+        "text": "该地点的每个暴徒需要受到 2 点伤害才能被击败。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "暗杀企图",
+        "text": "在该地点结束回合的英雄受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      }
+    ]
+  },
+  "loki": {
+    "name": "洛基",
+    "name_en": "Loki",
+    "color": "#2e6b48",
+    "image": "res://assets/cards/villains/loki/panel.png",
+    "back": "res://assets/cards/villains/loki/back.png",
+    "health": {
+      "2": 3,
+      "3": 5,
+      "4": 7
+    },
+    "bam": "对洛基所在地点的所有英雄造成 1 点伤害。",
+    "overflow": "如果平民/暴徒无法放置在地点上，洛基获得 1 点额外生命值（可以超过生命上限）。",
+    "plot": "",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "当英雄被 KO 时，洛基不会触发他的 BAM！，而是抽取一张反派行动牌，背面朝上放在故事情节中。",
+    "actions": [
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "loki_reach_empty_threat",
+          "name": "幻象大师",
+          "text": "顺时针移动到下一个没有威胁卡的地点，并随机将一张被解决的威胁卡放置到该地点。"
+        },
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 1,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "thug"
+          ],
+          [
+            "thug",
+            "thug"
+          ],
+          [
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 3,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ"
+          ],
+          [
+            "civ",
+            "civ"
+          ],
+          [
+            "civ"
+          ]
+        ]
+      },
+      {
+        "move": 5,
+        "bam": false,
+        "effect": null,
+        "place": [
+          [
+            "civ",
+            "thug"
+          ],
+          [
+            "civ",
+            "thug",
+            "thug"
+          ],
+          [
+            "civ",
+            "thug"
+          ]
+        ]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": {
+          "type": "loki_witchcraft",
+          "name": "巫术",
+          "text": "每个孤独的英雄受到一点伤害。如果没有英雄是孤独的，则再抽取一张反派行动牌，面朝下添加到故事情节中。"
+        },
+        "place": null
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": {
+          "type": "loki_witchcraft",
+          "name": "巫术",
+          "text": "每个孤独的英雄受到一点伤害。如果没有英雄是孤独的，则再抽取一张反派行动牌，面朝下添加到故事情节中。"
+        },
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {
+          "type": "loki_discord",
+          "name": "传播不和",
+          "text": "每个孤独的英雄受到一点伤害。如果所有英雄都是孤独的，则再抽取一张反派行动牌，面朝下添加到故事情节中。"
+        },
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": {
+          "type": "loki_discord",
+          "name": "传播不和",
+          "text": "每个孤独的英雄受到一点伤害。如果所有英雄都是孤独的，则再抽取一张反派行动牌，面朝下添加到故事情节中。"
+        },
+        "place": null
+      }
+    ],
+    "threats": [
+      {
+        "name": "幻象",
+        "text": "只要洛基在这个地点，他就不会受到任何伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "诡计大师",
+        "text": "如果洛基在这个地点受到任何伤害，这个地点的每个英雄也会受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "冰霜巨人",
+        "text": "BAM!：对该地点的所有英雄都造成 1 点伤害。",
+        "henchman_hp": 5,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "诡计大师",
+        "text": "如果洛基在这个地点受到任何伤害，这个地点的每个英雄也会受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      },
+      {
+        "name": "冰霜巨人",
+        "text": "BAM!：对该地点的所有英雄都造成 1 点伤害。",
+        "henchman_hp": 5,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "幻象",
+        "text": "只要洛基在这个地点，他就不会受到任何伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true
+      }
     ]
   }
 }

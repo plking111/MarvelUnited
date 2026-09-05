@@ -4,19 +4,90 @@
     "name_en": "Captain America",
     "color": "#2a6db5",
     "back": "res://assets/cards/heroes/cap/back.png",
+    "expansion": "基础盒",
     "cards": [
-      { "symbols": ["move"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
-      { "symbols": ["heroic", "heroic"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["move", "attack"] },
-      { "symbols": ["move"] },
-      { "symbols": ["heroic", "heroic"] },
-      { "symbols": ["attack"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
-      { "symbols": ["wild", "wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["move", "attack"] },
-      { "symbols": ["heroic"], "effect": { "type": "give_wild", "name": "领导力", "text": "从供应池中拿出一个万能指示物给另一个英雄" } },
-      { "symbols": ["heroic", "heroic"] }
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "give_wild",
+          "name": "领导力",
+          "text": "从供应池中拿出一个万能指示物给另一个英雄"
+        }
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "give_wild",
+          "name": "领导力",
+          "text": "从供应池中拿出一个万能指示物给另一个英雄"
+        }
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "give_wild",
+          "name": "领导力",
+          "text": "从供应池中拿出一个万能指示物给另一个英雄"
+        }
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      }
     ]
   },
   "ironman": {
@@ -24,19 +95,89 @@
     "name_en": "Iron Man",
     "color": "#b33a1f",
     "back": "res://assets/cards/heroes/ironman/back.png",
+    "expansion": "基础盒",
     "cards": [
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["move", "attack"] },
-      { "symbols": ["move"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["heroic"] },
-      { "symbols": ["move", "heroic"] },
-      { "symbols": ["wild", "wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["heroic", "heroic"] },
-      { "symbols": ["attack"], "effect": { "type": "give_move_x2", "name": "斯塔克资源", "text": "从供应池拿 2 个移动指示物，分配给任意英雄" } },
-      { "symbols": ["move"], "effect": { "type": "give_attack_x2", "name": "高级战斗分析", "text": "从供应池拿 2 个攻击指示物，分配给任意英雄" } },
-      { "symbols": ["heroic"], "effect": { "type": "draw_to_3", "name": "能量充能", "text": "从牌组抽牌直到手牌有 3 张" } }
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "give_move_x2",
+          "name": "斯塔克资源",
+          "text": "从供应池拿 2 个移动指示物，分配给任意英雄"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "give_attack_x2",
+          "name": "高级战斗分析",
+          "text": "从供应池拿 2 个攻击指示物，分配给任意英雄"
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "draw_to_3",
+          "name": "能量充能",
+          "text": "从牌组抽牌直到手牌有 3 张"
+        }
+      }
     ]
   },
   "cmarvel": {
@@ -44,19 +185,89 @@
     "name_en": "Captain Marvel",
     "color": "#c0392b",
     "back": "res://assets/cards/heroes/cmarvel/back.png",
+    "expansion": "基础盒",
     "cards": [
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["heroic", "heroic"] },
-      { "symbols": ["move", "heroic"] },
-      { "symbols": ["move", "move"] },
-      { "symbols": ["move"] },
-      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } },
-      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } },
-      { "symbols": ["wild", "wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["attack"], "effect": { "type": "photon_blast", "name": "光子冲击", "text": "在一个相邻地点执行 2 次攻击" } }
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "photon_blast",
+          "name": "光子冲击",
+          "text": "在一个相邻地点执行 2 次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "photon_blast",
+          "name": "光子冲击",
+          "text": "在一个相邻地点执行 2 次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "photon_blast",
+          "name": "光子冲击",
+          "text": "在一个相邻地点执行 2 次攻击"
+        }
+      }
     ]
   },
   "hulk": {
@@ -64,19 +275,88 @@
     "name_en": "Hulk",
     "color": "#3a7d3a",
     "back": "res://assets/cards/heroes/hulk/back.png",
+    "expansion": "基础盒",
     "cards": [
-      { "symbols": ["move", "attack"] },
-      { "symbols": ["heroic"] },
-      { "symbols": ["wild", "wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["heroic"] },
-      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["move"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } },
-      { "symbols": ["move"], "effect": { "type": "hulk_smash", "name": "绿巨人重击！", "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物" } }
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "hulk_smash",
+          "name": "绿巨人重击！",
+          "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物"
+        }
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "hulk_smash",
+          "name": "绿巨人重击！",
+          "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "hulk_smash",
+          "name": "绿巨人重击！",
+          "text": "对本地点其他所有角色造成 1 伤害，丢弃本地点全部平民指示物"
+        }
+      }
     ]
   },
   "widow": {
@@ -84,19 +364,1111 @@
     "name_en": "Black Widow",
     "color": "#5b5b6e",
     "back": "res://assets/cards/heroes/widow/back.png",
+    "expansion": "基础盒",
     "cards": [
-      { "symbols": ["heroic", "heroic"] },
-      { "symbols": ["move", "heroic"] },
-      { "symbols": ["move", "attack"] },
-      { "symbols": ["attack"] },
-      { "symbols": ["attack", "attack"] },
-      { "symbols": ["move"] },
-      { "symbols": ["wild", "wild"] },
-      { "symbols": ["wild"] },
-      { "symbols": ["move", "heroic"] },
-      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } },
-      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } },
-      { "symbols": ["attack"], "effect": { "type": "interrogate", "name": "审讯", "text": "查看主计划牌组顶牌，可将该牌放到牌组底部" } }
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "interrogate",
+          "name": "审讯",
+          "text": "查看主计划牌组顶牌，可将该牌放到牌组底部"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "interrogate",
+          "name": "审讯",
+          "text": "查看主计划牌组顶牌，可将该牌放到牌组底部"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "interrogate",
+          "name": "审讯",
+          "text": "查看主计划牌组顶牌，可将该牌放到牌组底部"
+        }
+      }
+    ]
+  },
+  "winter": {
+    "name": "冬兵",
+    "name_en": "Winter Soldier",
+    "color": "#3b6b8f",
+    "back": "res://assets/cards/heroes/winter/back.png",
+    "expansion": "瓦坎达",
+    "cards": [
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "veteran_assassin",
+          "name": "资深刺客",
+          "text": "冬兵获得两个攻击指示物"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "veteran_assassin",
+          "name": "资深刺客",
+          "text": "冬兵获得两个攻击指示物"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "veteran_assassin",
+          "name": "资深刺客",
+          "text": "冬兵获得两个攻击指示物"
+        }
+      }
+    ]
+  },
+  "shuri": {
+    "name": "苏瑞",
+    "name_en": "Shuri",
+    "color": "#7a4fa0",
+    "back": "res://assets/cards/heroes/shuri/back.png",
+    "expansion": "瓦坎达",
+    "cards": [
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "prodigy",
+          "name": "少年天才",
+          "text": "给予任意一名英雄一个万能指示物，然后该英雄可以抽牌，直到手里有3张牌为止"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "prodigy",
+          "name": "少年天才",
+          "text": "给予任意一名英雄一个万能指示物，然后该英雄可以抽牌，直到手里有3张牌为止"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "prodigy",
+          "name": "少年天才",
+          "text": "给予任意一名英雄一个万能指示物，然后该英雄可以抽牌，直到手里有3张牌为止"
+        }
+      }
+    ]
+  },
+  "blackpanther": {
+    "name": "黑豹",
+    "name_en": "Black Panther",
+    "color": "#23313f",
+    "back": "res://assets/cards/heroes/blackpanther/back.png",
+    "expansion": "瓦坎达",
+    "cards": [
+      {
+        "symbols": [
+          "move",
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "panther_instinct",
+          "name": "黑豹习性",
+          "text": "本回合获得移动、英勇行动",
+          "gain": [
+            "move",
+            "heroic"
+          ]
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "panther_instinct",
+          "name": "黑豹习性",
+          "text": "本回合获得移动、攻击行动",
+          "gain": [
+            "move",
+            "attack"
+          ]
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "panther_instinct",
+          "name": "黑豹习性",
+          "text": "本回合获得攻击、英勇行动",
+          "gain": [
+            "attack",
+            "heroic"
+          ]
+        }
+      }
+    ]
+  },
+  "korg": {
+    "name": "科格",
+    "name_en": "Korg",
+    "color": "#b08434",
+    "back": "res://assets/cards/heroes/korg/back.png",
+    "expansion": "阿斯加德",
+    "cards": [
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "korg_fighter",
+          "name": "科格战斗机",
+          "text": "在相邻两个地点各进行一次攻击；或者在你所在地点进行两次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "korg_fighter",
+          "name": "科格战斗机",
+          "text": "在相邻两个地点各进行一次攻击；或者在你所在地点进行两次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "korg_fighter",
+          "name": "科格战斗机",
+          "text": "在相邻两个地点各进行一次攻击；或者在你所在地点进行两次攻击"
+        }
+      }
+    ]
+  },
+  "valkyrie": {
+    "name": "女武神",
+    "name_en": "Valkyrie",
+    "color": "#2e8b8b",
+    "back": "res://assets/cards/heroes/valkyrie/back.png",
+    "expansion": "阿斯加德",
+    "cards": [
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "war_song",
+          "name": "战歌",
+          "text": "你可以移动到任意地点"
+        }
+      },
+      {
+        "symbols": [
+          "heroic",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "war_song",
+          "name": "战歌",
+          "text": "你可以移动到任意地点"
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "war_song",
+          "name": "战歌",
+          "text": "你可以移动到任意地点"
+        }
+      }
+    ]
+  },
+  "betaray": {
+    "name": "马面雷神",
+    "name_en": "Beta Ray Bill",
+    "color": "#2b4a6b",
+    "back": "res://assets/cards/heroes/betaray/back.png",
+    "expansion": "阿斯加德",
+    "cards": [
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "stormbreaker",
+          "name": "风暴战斧",
+          "text": "进行两次攻击，然后抽取一张牌"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "stormbreaker",
+          "name": "风暴战斧",
+          "text": "进行两次攻击，然后抽取一张牌"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "stormbreaker",
+          "name": "风暴战斧",
+          "text": "进行两次攻击，然后抽取一张牌"
+        }
+      }
+    ]
+  },
+  "thor": {
+    "name": "雷神",
+    "name_en": "Thor",
+    "color": "#3a6bc0",
+    "back": "res://assets/cards/heroes/thor/back.png",
+    "expansion": "阿斯加德",
+    "cards": [
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "mjolnir",
+          "name": "雷神之锤",
+          "text": "对你所在地点的一个敌人造成3次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "mjolnir",
+          "name": "雷神之锤",
+          "text": "对你所在地点的一个敌人造成3次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "mjolnir",
+          "name": "雷神之锤",
+          "text": "对你所在地点的一个敌人造成3次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      }
+    ]
+  },
+  "starlord": {
+    "name": "星爵",
+    "name_en": "Star-Lord",
+    "color": "#7a5a9a",
+    "back": "res://assets/cards/heroes/starlord/back.png",
+    "expansion": "银河护卫队",
+    "cards": [
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "problem_solver",
+          "name": "问题解决者",
+          "text": "指定一名玩家和一个非万能行动指示物，该玩家获得你指定的行动指示物"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "problem_solver",
+          "name": "问题解决者",
+          "text": "指定一名玩家和一个非万能行动指示物，该玩家获得你指定的行动指示物"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ],
+        "effect": {
+          "type": "problem_solver",
+          "name": "问题解决者",
+          "text": "指定一名玩家和一个非万能行动指示物，该玩家获得你指定的行动指示物"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      }
+    ]
+  },
+  "rocket": {
+    "name": "火箭",
+    "name_en": "Rocket",
+    "color": "#a34a2a",
+    "back": "res://assets/cards/heroes/rocket/back.png",
+    "expansion": "银河护卫队",
+    "cards": [
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "raccoon_senses",
+          "name": "浣熊感官",
+          "text": "选择其一：获得一个万能指示物；或者你指定任意数量你拥有行动指示物，转化为万能指示物"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "genius_engineer",
+          "name": "天才技师",
+          "text": "选择其一：获得一个万能指示物；或者本回合你使用的行动指示物可以执行两次行动"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "genius_engineer",
+          "name": "天才技师",
+          "text": "选择其一：获得一个万能指示物；或者本回合你使用的行动指示物可以执行两次行动"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      }
+    ]
+  },
+  "gamora": {
+    "name": "卡魔拉",
+    "name_en": "Gamora",
+    "color": "#3a7d5a",
+    "back": "res://assets/cards/heroes/gamora/back.png",
+    "expansion": "银河护卫队",
+    "cards": [
+      {
+        "symbols": [
+          "move"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "gamora_fury",
+          "name": "卡魔拉斩击",
+          "text": "本回合你每执行一次万能/攻击行动，你额外获得一个攻击行动（该效果获得的攻击行动不能触发该效果）"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "gamora_fury",
+          "name": "卡魔拉斩击",
+          "text": "本回合你每执行一次万能/攻击行动，你额外获得一个攻击行动（该效果获得的攻击行动不能触发该效果）"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "attack",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ]
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "gamora_fury",
+          "name": "卡魔拉斩击",
+          "text": "本回合你每执行一次万能/攻击行动，你额外获得一个攻击行动（该效果获得的攻击行动不能触发该效果）"
+        }
+      },
+      {
+        "symbols": [
+          "heroic",
+          "attack"
+        ]
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      }
+    ]
+  },
+  "groot": {
+    "name": "格鲁特",
+    "name_en": "Groot",
+    "color": "#6b8f4a",
+    "back": "res://assets/cards/heroes/groot/back.png",
+    "expansion": "银河护卫队",
+    "cards": [
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "get_groot_q",
+          "name": "我是格鲁特？",
+          "text": "选择一名其他英雄，将该英雄移动到他所在地点的相邻地点"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "get_groot_q",
+          "name": "我是格鲁特？",
+          "text": "选择一名其他英雄，将该英雄移动到他所在地点的相邻地点"
+        }
+      },
+      {
+        "symbols": [
+          "move"
+        ],
+        "effect": {
+          "type": "get_groot_q",
+          "name": "我是格鲁特？",
+          "text": "选择一名其他英雄，将该英雄移动到他所在地点的相邻地点"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "get_groot",
+          "name": "我是格鲁特！",
+          "text": "选择一名其他英雄，你与该英雄在各自所在地点进行一次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "get_groot",
+          "name": "我是格鲁特！",
+          "text": "选择一名其他英雄，你与该英雄在各自所在地点进行一次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "get_groot",
+          "name": "我是格鲁特！",
+          "text": "选择一名其他英雄，你与该英雄在各自所在地点进行一次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "attack"
+        ],
+        "effect": {
+          "type": "get_groot",
+          "name": "我是格鲁特！",
+          "text": "选择一名其他英雄，你与该英雄在各自所在地点进行一次攻击"
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "we_are_groot",
+          "name": "我们是格鲁特",
+          "text": "选择一名其他英雄，你与其各抽一张牌"
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "we_are_groot",
+          "name": "我们是格鲁特",
+          "text": "选择一名其他英雄，你与其各抽一张牌"
+        }
+      },
+      {
+        "symbols": [
+          "heroic"
+        ],
+        "effect": {
+          "type": "we_are_groot",
+          "name": "我们是格鲁特",
+          "text": "选择一名其他英雄，你与其各抽一张牌"
+        }
+      },
+      {
+        "symbols": [
+          "wild"
+        ]
+      },
+      {
+        "symbols": [
+          "wild",
+          "wild"
+        ]
+      }
     ]
   }
 }

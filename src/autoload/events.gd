@@ -19,17 +19,23 @@ signal toast(text: String)
 ## 需要选择手牌（可多选 count 张）
 signal prompt_hand_card(callback: Callable, title: String, hero_id: String, count: int)
 
-## 需要选择一张故事情节中的卡牌
-signal prompt_story_card(callback: Callable, title: String)
+## 需要选择一张故事情节中的卡牌；filter_hero 非空时只显示该英雄的行动牌（如斯塔克实验室交换）
+signal prompt_story_card(callback: Callable, title: String, filter_hero: String)
 
 ## 需要从牌库选择一张牌
 signal prompt_deck_card(callback: Callable, title: String, hero_id: String)
+
+## 完成一个任务时触发（用于弹出"任务完成"提示）；count 为第几个任务(1-3)，hero_id 为完成该任务的英雄
+signal mission_completed(count: int, hero_id: String)
 
 ## 显示一张反派行动牌（主计划牌）并要求确认（黑寡妇审讯用）
 signal prompt_villain_card(callback: Callable, title: String, card_idx: int)
 
 ## 需要选择地点
 signal prompt_location(callback: Callable, title: String, filter: Callable)
+
+## 需要从可选英雄池中选择一个（灭霸淘汰替换英雄用）：弹出搜索/筛选面板
+signal prompt_hero_pick(callback: Callable, title: String, options: Array)
 
 ## 游戏结束
 signal game_over(victory: bool, reason: String)
