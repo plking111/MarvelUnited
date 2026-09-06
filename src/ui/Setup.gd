@@ -31,6 +31,9 @@ var _hero_tooltip: PanelContainer   # 英雄悬停强度窗口
 var _hero_tooltip_title: Label
 var _hero_tooltip_body: Label
 var _hero_tooltip_hid: String = ""
+var _villain_panel_tooltip: PanelContainer   # 反派悬停面板背面预览
+var _villain_panel_img: TextureRect
+var _villain_panel_vid: String = ""
 var _hero_row_labels: Array = []   # 每行图标后的数字 Label（4 行）
 var _hero_row_bars: Array = []     # 每行进度条填充 ColorRect（4 行）
 var _exp_labels: Array = []
@@ -52,10 +55,10 @@ var _mode_info_title: Label
 var _mode_info_desc: Label
 
 # 排序数据：拼音首字母 + 所属扩展盒（目前全部为基础盒）
-const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L"}
-const HERO_SORT := {"cap": "M", "ironman": "G", "cmarvel": "J", "hulk": "L", "widow": "H", "winter": "W", "shuri": "S", "blackpanther": "B", "korg": "K", "valkyrie": "N", "betaray": "M", "thor": "L", "starlord": "X", "rocket": "H", "gamora": "K", "groot": "G"}
-const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德"}
-const HERO_EXP := {"cap": "基础盒", "ironman": "基础盒", "cmarvel": "基础盒", "hulk": "基础盒", "widow": "基础盒", "winter": "瓦坎达", "shuri": "瓦坎达", "blackpanther": "瓦坎达", "korg": "阿斯加德", "valkyrie": "阿斯加德", "betaray": "阿斯加德", "thor": "阿斯加德", "starlord": "银河护卫队", "rocket": "银河护卫队", "gamora": "银河护卫队", "groot": "银河护卫队"}
+const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L", "ronan": "L", "goblin": "L"}
+const HERO_SORT := {"cap": "M", "ironman": "G", "cmarvel": "J", "hulk": "L", "widow": "H", "winter": "W", "shuri": "S", "blackpanther": "B", "korg": "K", "valkyrie": "N", "betaray": "M", "thor": "L", "starlord": "X", "rocket": "H", "gamora": "K", "groot": "G", "spiderman": "Z", "miles": "M", "gwenspider": "G", "spiderpig": "Z"}
+const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德", "ronan": "银河护卫队", "goblin": "蜘蛛侠扩"}
+const HERO_EXP := {"cap": "基础盒", "ironman": "基础盒", "cmarvel": "基础盒", "hulk": "基础盒", "widow": "基础盒", "winter": "瓦坎达", "shuri": "瓦坎达", "blackpanther": "瓦坎达", "korg": "阿斯加德", "valkyrie": "阿斯加德", "betaray": "阿斯加德", "thor": "阿斯加德", "starlord": "银河护卫队", "rocket": "银河护卫队", "gamora": "银河护卫队", "groot": "银河护卫队", "spiderman": "蜘蛛侠扩", "miles": "蜘蛛侠扩", "gwenspider": "蜘蛛侠扩", "spiderpig": "蜘蛛侠扩"}
 
 # 英雄顺位框颜色：按彩虹色排列（红橙黄绿青蓝紫），第 8 位起循环（支持更多玩家）
 const HERO_SLOT_COLORS := [
@@ -121,9 +124,9 @@ func _ready() -> void:
 		var parsed: Variant = JSON.parse_string(f.get_as_text())
 		if parsed is Dictionary:
 			_mode_info_data = parsed
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot"]:
+	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]:
 		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]:
 		_villain_icons[vid] = load(DB.villain(vid)["back"])
 	for num in range(1, MODE_DATA.size() + 1):
 		var tex: Texture2D = load("res://assets/ui/modes/mode_%d.png" % num)
@@ -134,9 +137,11 @@ func _ready() -> void:
 	_gray_mat = ShaderMaterial.new()
 	_gray_mat.shader = sh
 	_create_hero_tooltip()
+	_create_villain_panel_tooltip()
 	_build_ui()
 	# 让 tooltip 移到最上层，避免被步骤页遮挡
 	move_child(_hero_tooltip, get_child_count() - 1)
+	move_child(_villain_panel_tooltip, get_child_count() - 1)
 
 ## 创建英雄悬停强度窗口（跟随鼠标；固定大小框，显示名字 + 4 行"图标 x 数字"）
 func _create_hero_tooltip() -> void:
@@ -198,6 +203,40 @@ func _create_hero_tooltip() -> void:
 		_hero_row_labels.append(num)
 	add_child(_hero_tooltip)
 
+## 反派悬停面板背面预览浮层：鼠标指向反派时显示其"面板背面"图。
+func _create_villain_panel_tooltip() -> void:
+	_villain_panel_tooltip = PanelContainer.new()
+	_villain_panel_tooltip.visible = false
+	_villain_panel_tooltip.z_index = 100
+	_villain_panel_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_villain_panel_tooltip.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.08, 0.08, 0.14, 0.95)))
+	_villain_panel_tooltip.custom_minimum_size = Vector2(300, 140)
+	_villain_panel_tooltip.size = Vector2(300, 140)
+	_villain_panel_img = TextureRect.new()
+	_villain_panel_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_villain_panel_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_villain_panel_img.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# 面板背面为 1140x525 宽屏，缩放到适合悬停浮层高度
+	_villain_panel_img.custom_minimum_size = Vector2(300, 138)
+	_villain_panel_tooltip.add_child(_villain_panel_img)
+	add_child(_villain_panel_tooltip)
+
+## 显示反派面板背面预览：优先用 panel_back.png；缺素材的反派回退 back.png（立绘）。
+func _show_villain_panel(vid: String) -> void:
+	if _villain_panel_tooltip == null:
+		return
+	_villain_panel_vid = vid
+	var tex: Texture2D = load("res://assets/cards/villains/%s/panel_back.png" % vid)
+	if tex == null:
+		tex = load("res://assets/cards/villains/%s/back.png" % vid)
+	_villain_panel_img.texture = tex
+	_villain_panel_tooltip.visible = true
+
+func _hide_villain_panel() -> void:
+	if _villain_panel_tooltip != null:
+		_villain_panel_tooltip.visible = false
+		_villain_panel_vid = ""
+
 ## 显示英雄强度窗口：内容 = 名字 + 4 行行动图标总数
 func _show_hero_tooltip(hid: String) -> void:
 	if _hero_tooltip == null:
@@ -245,6 +284,18 @@ func _process(_delta: float) -> void:
 		pos.x = maxf(pos.x, 0)
 		pos.y = maxf(pos.y, 0)
 		_hero_tooltip.global_position = pos
+	if _villain_panel_tooltip != null and _villain_panel_tooltip.visible:
+		var mouse: Vector2 = get_global_mouse_position()
+		var ts: Vector2 = _villain_panel_tooltip.size
+		var vs: Vector2 = get_viewport().get_visible_rect().size
+		var pos := mouse + Vector2(18, 6)
+		if pos.x + ts.x > vs.x:
+			pos.x = mouse.x - ts.x - 18
+		if pos.y + ts.y > vs.y:
+			pos.y = mouse.y - ts.y - 6
+		pos.x = maxf(pos.x, 0)
+		pos.y = maxf(pos.y, 0)
+		_villain_panel_tooltip.global_position = pos
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
@@ -838,7 +889,7 @@ func _render_villains() -> void:
 			{"name": "其他反派", "ids": rest_ids},
 		]
 	else:
-		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]
+		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]
 		if q != "":
 			# 搜索过滤：所有匹配反派合并成一个列表，按拼音重排，左上角紧凑排列
 			var matched: Array = []
@@ -870,6 +921,8 @@ func _render_villains() -> void:
 				box.modulate = Color(0.35, 0.35, 0.4)
 			var bbtn: Button = box.get_child(box.get_child_count() - 1)
 			bbtn.pressed.connect(_on_villain_selected.bind(vid))
+			bbtn.mouse_entered.connect(_show_villain_panel.bind(vid))
+			bbtn.mouse_exited.connect(_hide_villain_panel)
 			_villain_buttons[vid] = box
 			x += 160
 			col += 1
@@ -889,7 +942,7 @@ func _render_heroes() -> void:
 	_clear_exp_labels(parent)
 	# 搜索词：非空时只显示匹配英雄，并从左上角重排（过滤后不保留空位）
 	var q: String = _hero_search.text.strip_edges() if _hero_search != null else ""
-	var all_ids: Array = ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot"]
+	var all_ids: Array = ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]
 	var groups: Array
 	if q != "":
 		# 搜索过滤：所有匹配英雄合并成一个列表，按拼音重排，左上角紧凑排列

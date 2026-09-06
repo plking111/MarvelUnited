@@ -23,8 +23,8 @@ func load_data() -> void:
 	stones = inf.get("stones", [])
 	energy_cards = inf.get("energy_cards", [])
 	assert(heroes.size() >= 5, "英雄数据应至少5位")
-	assert(villains.size() == 9, "反派数据应有9个")
-	assert(locations.size() == 32, "地点数据应有32张")
+	assert(villains.size() == 11, "反派数据应有11个")
+	assert(locations.size() == 44, "地点数据应有44张")
 	assert(missions.size() == 3, "任务卡应有3张")
 	assert(stones.size() == 6, "无限宝石应有6颗")
 

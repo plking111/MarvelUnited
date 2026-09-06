@@ -129,9 +129,9 @@ static func precache_async() -> void:
 	for t in tokens:
 		paths.append("res://assets/tokens/%s.png" % t)
 	# 英雄/反派卡背
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther"]:
+	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]:
 		paths.append(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]:
 		paths.append(DB.villain(vid)["back"])
 	for p in paths:
 		if _precache_requested.has(p):

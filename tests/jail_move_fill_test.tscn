@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/jail_move_fill_test.gd" id="1"]
+
+[node name="jail_move_fill_test" type="Node"]
+script = ExtResource("1")

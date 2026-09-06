@@ -267,19 +267,54 @@ func refresh(state: Dictionary) -> void:
 	card.modulate = Color(1.25, 1.05, 1.05) if state["villain_pos"] == i else Color.WHITE
 
 ## 非爪牙威胁卡：更新 3 个英勇槽（空槽偏白半透明，已放指示物全亮）
+## 罗南"符号清除"威胁卡：clear 数组决定每个槽的符号图标（移动/英勇/攻击），按 clear_progress 判断填充。
 func _update_threat_heroic_slots(t: Dictionary) -> void:
 	var tw: float = threat.custom_minimum_size.x
 	var th: float = threat.custom_minimum_size.y
 	var xs: Array = THREAT_HEROIC_SLOTS["xs"]
 	var sy: float = THREAT_HEROIC_SLOTS["y"]
-	var tokens: int = int(t.get("heroic_tokens", 0))
 	# 指示物尺寸：接近槽间距（横版卡 38px、竖版卡 27px）
 	var size: float = 38.0 if tw > 100.0 else 27.0
+	if t.has("clear"):
+		var clear: Array = t["clear"]
+		var filled: Array = t.get("clear_progress", [])
+		var sym_icons := {
+			"move": load("res://assets/tokens/token_move.png"),
+			"attack": load("res://assets/tokens/token_attack.png"),
+			"heroic": load("res://assets/tokens/token_heroic.png"),
+		}
+		# 统计各符号已填次数
+		var filled_count := {}
+		for sym in filled:
+			filled_count[sym] = int(filled_count.get(sym, 0)) + 1
+		# 当前槽之前该符号已出现的次数（决定该槽是否已填）
+		var seen := {}
+		for si in range(3):
+			var sr: TextureRect = heroic_slots[si]
+			if t["hp"] > 0:
+				sr.visible = false
+				continue
+			sr.visible = true
+			sr.custom_minimum_size = Vector2(size, size)
+			sr.position = Vector2(float(xs[si]) * tw - size / 2.0, sy * th - size / 2.0 + 4.0)
+			if si < clear.size():
+				var need_sym: String = clear[si]
+				sr.texture = sym_icons.get(need_sym, _icon_heroic)
+				var filled_before: int = int(seen.get(need_sym, 0))
+				var filled_total: int = int(filled_count.get(need_sym, 0))
+				# 该槽已填：在它之前的同符号槽都已填完，且总填入数 > 之前已计数
+				sr.modulate = Color(1, 1, 1, 1.0) if filled_total > filled_before else Color(1, 1, 1, 0.3)
+				seen[need_sym] = filled_before + 1
+			else:
+				sr.modulate = Color(1, 1, 1, 0.25)  # 无符号位置：弱显示
+		return
+	var tokens: int = int(t.get("heroic_tokens", 0))
 	for si in range(3):
 		var sr: TextureRect = heroic_slots[si]
 		if t["hp"] > 0:
 			sr.visible = false
 			continue
+		sr.texture = _icon_heroic
 		sr.visible = true
 		sr.custom_minimum_size = Vector2(size, size)
 		sr.position = Vector2(float(xs[si]) * tw - size / 2.0, sy * th - size / 2.0 + 4.0)

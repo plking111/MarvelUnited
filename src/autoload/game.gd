@@ -7,6 +7,7 @@ signal _answered(response)
 
 const LOCATION_COUNT := 6
 const THREAT_CLEAR_TOKENS := 3
+const VILLAIN_STEP_DELAY := 0.5   # 反派回合每个步骤之间的间隔（秒），便于观察逐步结算
 
 var state: Dictionary = {}
 var autopilot: bool = false   # 无 UI 时自动选择（测试用）
@@ -50,6 +51,9 @@ func setup(villain_id: String, hero_ids: Array, challenge: String = "none", mode
 		"final_battle": false,
 		"extra_villain_card": 0,
 		"extra_villain_turn": false,
+		"ko_tokens": 0,   # 罗南：英雄被 KO 时获得 KO 指示物，累计 4 个判负
+		"delay_villain_turn": false,   # 迈尔斯蛛网：反派回合推迟一个英雄回合
+		"no_villain_move_next": false,   # 蜘猪侠卡通蛛网：下个反派行动不移动
 		"story": [],
 		"solved_threats": [],
 		"master_deck": [],
@@ -99,15 +103,34 @@ func setup(villain_id: String, hero_ids: Array, challenge: String = "none", mode
 			"id": loc_ids[i], "civ": civ, "thug": thug, "crisis": 0,
 			"threat": null, "threat_token": true,
 		})
-	# 洗混威胁牌，每个地点1张
+	# 洗混威胁牌，每个地点1张（绿魔特殊：不预放威胁卡，威胁卡做成单独牌堆）
 	var threats: Array = vill["threats"].duplicate()
 	threats.shuffle()
-	for i in range(loc_n):
-		var t: Dictionary = threats[i].duplicate(true)
-		t["hp"] = t.get("henchman_hp", 0)
-		t["heroic_tokens"] = 0
-		t["arrival_triggered"] = false
-		state["locations"][i]["threat"] = t
+	if state["villain"] == "goblin":
+		# 绿魔特殊设置：不放置威胁卡/威胁指示物，威胁卡是单独牌堆（背面朝上放旁）
+		state["goblin_threat_deck"] = []
+		for t in threats:
+			var td: Dictionary = t.duplicate(true)
+			td["hp"] = td.get("henchman_hp", 0)
+			td["heroic_tokens"] = 0
+			td["arrival_triggered"] = false
+			if td.has("clear"):
+				td["clear_progress"] = []
+			# 放置型威胁卡（企业爪牙）：放牌堆前先记默认要放的暴徒
+			state["goblin_threat_deck"].append(td)
+		state["goblin_panel_civ"] = 0
+		state["goblin_scoundrel_bonus"] = false
+		state["goblin_scoundrel_active"] = false
+	else:
+		for i in range(loc_n):
+			var t: Dictionary = threats[i].duplicate(true)
+			t["hp"] = t.get("henchman_hp", 0)
+			t["heroic_tokens"] = 0
+			t["arrival_triggered"] = false
+			# 罗南等"符号清除"威胁卡：clear 数组 = 需填入的符号序列；filled 记录已填入的符号
+			if t.has("clear"):
+				t["clear_progress"] = []  # 已填入的符号列表（顺序无关，逐符号填）
+			state["locations"][i]["threat"] = t
 	# 反派初始位置
 	state["villain_pos"] = randi_range(0, maxi(loc_n - 1, 0))
 	# 英雄
@@ -120,7 +143,7 @@ func setup(villain_id: String, hero_ids: Array, challenge: String = "none", mode
 		_apply_challenge(deck, hid)
 		state["heroes"][hid] = {
 			"id": hid, "deck": deck, "discard": [], "hand": [], "location": -1, "ko": false,
-			"crisis": 0, "invulnerable": false,
+			"crisis": 0, "invulnerable": false, "ko_count": 0, "cartoon_web_armed": false, "miles_web_armed": false,
 			"tokens": {"move": 0, "attack": 0, "heroic": 0, "wild": 0},
 		}
 	# 神盾局单人模式：3 英雄牌组合并成一个牌组，共享手牌；行动指示物共享给玩家
@@ -703,6 +726,20 @@ func _check_lose() -> bool:
 		if crisis_locs >= 4:
 			_lose("基尔格蒙的邪恶阴谋得逞：4 个以上地点有 3 个以上危机指示物，英雄失败！")
 			return true
+	# 罗南·邪恶计划：英雄们总计获得 4 个 KO 指示物 → 英雄失败
+	if state["villain"] == "ronan" and int(state.get("ko_tokens", 0)) >= 4:
+		_lose("英雄们总计获得 4 个 KO 指示物，罗南的邪恶计划得逞了！")
+		return true
+	# 绿魔·邪恶计划：当所有地点都有威胁卡时，英雄失败
+	if state["villain"] == "goblin":
+		var all_threat := true
+		for l in state["locations"]:
+			if l["threat"] == null:
+				all_threat = false
+				break
+		if all_threat:
+			_lose("绿魔占领了所有地点（全部地点都有威胁卡），邪恶计划得逞！")
+			return true
 	return false
 
 func _lose(reason: String) -> void:
@@ -836,9 +873,13 @@ func _deal_damage_to_hero(hid: String, amount: int) -> void:
 					dropped.append(hand_ref.pop_back())
 		else:
 			picked.sort()
+			# 蜘猪侠卡通精髓：最后一张牌不能被弃置（弃后至少保留 1 张手牌）
+			var protect: bool = h.get("protect_last_card", false)
 			for i in range(picked.size() - 1, -1, -1):
 				var idx: int = int(picked[i])
 				if idx >= 0 and idx < hand_ref.size():
+					if protect and hand_ref.size() == 1:
+						continue
 					dropped.append(hand_ref[idx])
 					hand_ref.remove_at(idx)
 		# 受伤弃掉的牌回到该英雄牌库底（官方规则；神盾局模式回共享牌库底）
@@ -864,6 +905,21 @@ func _ko_hero(hid: String) -> void:
 	while h["hand"].size() > 0:
 		h["deck"].append(h["hand"].pop_back())
 	h["ko"] = true
+	if state["villain"] == "ronan":
+		# 罗南特殊规则：有英雄被 KO 时，该英雄获得 1 个 KO 指示物（标记在英雄图标上）；累计 4 个判负。
+		# 罗南 KO 不替换英雄（那是灭霸规则）；英雄保持 KO 状态，回合开始复活，并触发普通 BAM。
+		h["ko_count"] = int(h.get("ko_count", 0)) + 1
+		state["ko_tokens"] = int(state.get("ko_tokens", 0)) + 1
+		_log("💥 %s 被击倒（KO）！获得 1 个 KO 指示物（该英雄 %d 个，全场 %d/4）" % [DB.hero_name(hid), h["ko_count"], state["ko_tokens"]], Color(0.9, 0.3, 0.3))
+		if int(state.get("ko_tokens", 0)) >= 4:
+			_lose("英雄们总计获得 4 个 KO 指示物，罗南的邪恶计划得逞了！")
+			return
+		_log("💥 %s 被击倒（KO）！触发反派 BAM 效果！" % DB.hero_name(hid), Color(1, 0.5, 0.2))
+		await _trigger_panel_bam()
+		if _check_lose():
+			return
+		Events.emit_state_changed()
+		return
 	if state["villain"] == "thanos":
 		# 灭霸特殊规则：KO 时不触发 BAM！该英雄被从游戏中淘汰，玩家选择新的英雄继续游戏
 		_log("💥 %s 被击倒（KO）！灭霸不触发 BAM，英雄被淘汰！" % DB.hero_name(hid), Color(0.9, 0.3, 0.3))
@@ -924,7 +980,7 @@ func _choose_replacement_hero(spawn_loc: int = -1) -> void:
 	deck.shuffle()
 	state["heroes"][nhid] = {
 		"id": nhid, "deck": deck, "discard": [], "hand": [], "location": spawn_loc, "ko": true,
-		"crisis": 0, "invulnerable": false,
+		"crisis": 0, "invulnerable": false, "ko_count": 0, "cartoon_web_armed": false, "miles_web_armed": false,
 		"tokens": {"move": 0, "attack": 0, "heroic": 0, "wild": 0},
 	}
 	state["hero_ids"].append(nhid)
@@ -953,6 +1009,7 @@ func _run_villain_turn() -> void:
 	state["cull_armor_used"] = false
 	state["proxima_parry_used"] = false
 	_log("—— 反派回合 #%d ——" % state["turn_count"], Color(1, 0.5, 0.5))
+	await _step_pause()
 	var pending: int = state.get("extra_villain_card", 0) + 1
 	state["extra_villain_card"] = 0
 	var guard := 0
@@ -978,31 +1035,34 @@ func _run_villain_turn() -> void:
 		state["master_discard"].append(card_idx)
 		var vill: Dictionary = DB.villain(state["villain"])
 		var card: Dictionary = vill["actions"][card_idx]
-		state["story"].append({"type": "villain", "villain": state["villain"], "idx": card_idx, "move": card.get("move", 0)})
-		var parts: Array = ["移动%d" % card.get("move", 0)]
+		var move_desc: String = _move_desc(card.get("move", 0))
+		state["story"].append({"type": "villain", "villain": state["villain"], "idx": card_idx, "move": move_desc})
+		var parts: Array = [move_desc]
 		if card.get("bam", false): parts.append("BAM")
 		if card.get("effect", null) != null: parts.append(card["effect"]["name"])
 		_log("反派行动牌：%s" % " - ".join(parts), Color(1, 0.7, 0.7))
-		# 1. 移动
-		var mv: int = card.get("move", 0)
-		if mv > 0:
-			state["villain_pos"] = (state["villain_pos"] + mv) % LOCATION_COUNT
-			_log("反派移动到：%s" % _loc_name(state["villain_pos"]), Color(0.9, 0.7, 1))
+		await _step_pause()
+		# 1. 移动（数字move为普通顺时针走；Dictionary为罗南等特殊移动）
+		await _do_villain_move(card.get("move", 0))
 		# 立即刷新：先展示移动（动画/位置），之后才结算 BAM 的伤害（修复"先弃牌后移动"）
 		Events.emit_state_changed()
+		await _step_pause()
 		# 3. BAM
 		if card.get("bam", false):
 			await _trigger_panel_bam()
 			await _trigger_all_threat_bam()
 			Events.emit_state_changed()
+			await _step_pause()
 		# 4. 特殊效果（在放置之前执行）
 		if card.get("effect", null) != null:
 			await _resolve_villain_effect(card["effect"])
 			Events.emit_state_changed()
+			await _step_pause()
 		# 5. 放置指示物
 		if card.get("place", null) != null:
 			await _do_placement(card["place"])
 			Events.emit_state_changed()
+			await _step_pause()
 		if _check_lose():
 			return
 		# 结算过程中可能又加入了额外行动卡（天才智力/劝诱/黑矮星KO/灭霸威胁乌木侯）
@@ -1018,6 +1078,7 @@ func _run_villain_turn() -> void:
 		return
 	# 反派回合结束：只有反派"到达效果"威胁仍在反派最终停留地点，才结算到达效果
 	# （若本回合中反派已离开该地点，则不再触发；避免与 BAM 伤害叠加导致重复弃牌）
+	await _step_pause()
 	await _trigger_threat_arrival(state["villain_pos"])
 	# 到达效果可能要求"反派回合结束后再进行一次反派回合"（如乌木侯劝诱-无英雄）
 	if state.get("extra_villain_turn", false) and state["phase"] != "game_over":
@@ -1034,6 +1095,56 @@ func _run_villain_turn() -> void:
 	Events.emit_state_changed()
 	_start_hero_phase()
 
+## 反派回合各步骤之间的间隔暂停（0.5s），让"回合开始→出牌→移动→BAM→效果→放置→到达"逐帧进行。
+## autopilot（无 UI / 测试）时跳过，避免拖慢自动化。
+func _step_pause() -> void:
+	if autopilot:
+		return
+	await get_tree().create_timer(VILLAIN_STEP_DELAY).timeout
+
+## 行动卡"移动"的可读描述。数字=普通顺时针走 N 步；Dictionary=罗南特殊移动。
+func _move_desc(mv: Variant) -> String:
+	if mv is Dictionary:
+		var dir: String = "顺时针" if mv.get("dir", "cw") == "cw" else "逆时针"
+		var tgt: String = "有英雄" if mv.get("hero_in", true) else "没有英雄"
+		return "%s→下一%s地点" % [dir, tgt]
+	return "移动%d" % int(mv)
+
+## 执行反派移动。数字=普通顺时针走 N 步；Dictionary=罗南特殊移动（顺/逆时针到下一有/无英雄地点）。
+func _do_villain_move(mv: Variant) -> void:
+	# 蜘猪侠卡通蛛网：下一个反派行动时，反派不能移动
+	if state.get("no_villain_move_next", false):
+		state["no_villain_move_next"] = false
+		_log("卡通蛛网：反派不能移动，停留原地", Color(0.7, 0.9, 1))
+		return
+	if mv is Dictionary:
+		# 罗南特殊移动：沿指定方向找第一个满足条件的地点（从当前位置的后一个开始）
+		var dir: String = mv.get("dir", "cw")
+		var want_hero: bool = mv.get("hero_in", true)
+		var step_dir: int = 1 if dir == "cw" else LOCATION_COUNT - 1
+		var target: int = state["villain_pos"]
+		var found := false
+		for s in range(1, LOCATION_COUNT + 1):
+			var i: int = (state["villain_pos"] + s * step_dir) % LOCATION_COUNT
+			var here_heroes: int = _heroes_at(i).size()
+			var ok := (here_heroes > 0) if want_hero else (here_heroes == 0)
+			if ok:
+				target = i
+				found = true
+				break
+		if found:
+			state["villain_pos"] = target
+			var dir_txt: String = "顺时针" if dir == "cw" else "逆时针"
+			var tgt_txt: String = "有英雄" if want_hero else "没有英雄"
+			_log("反派%s移动到：%s（下一%s地点）" % [dir_txt, _loc_name(target), tgt_txt], Color(0.9, 0.7, 1))
+		else:
+			_log("未找到%s地点，反派停留原地" % ("有英雄" if want_hero else "没有英雄"), Color(0.9, 0.7, 1))
+		return
+	var mv_n: int = int(mv)
+	if mv_n > 0:
+		state["villain_pos"] = (state["villain_pos"] + mv_n) % LOCATION_COUNT
+		_log("反派移动到：%s" % _loc_name(state["villain_pos"]), Color(0.9, 0.7, 1))
+
 func _trigger_panel_bam() -> void:
 	var vill: Dictionary = DB.villain(state["villain"])
 	_log("BAM！%s：%s" % [DB.villain_name(state["villain"]), vill["bam"]], Color(1, 0.6, 0.3))
@@ -1041,11 +1152,17 @@ func _trigger_panel_bam() -> void:
 	await VillainRules.on_bam(self, state["villain"])
 
 func _trigger_all_threat_bam() -> void:
+	# 每轮开始重置所有威胁卡的 BAM 执行标记（避免猎人克莱文移动后在新地点被再次触发，导致 BAM 执行两次）
+	for loc in range(LOCATION_COUNT):
+		var lt: Variant = state["locations"][loc]["threat"]
+		if lt != null:
+			lt["_bam_done"] = false
 	for i in range(LOCATION_COUNT):
 		var l: Dictionary = state["locations"][i]
-		if l["threat"] == null or not l["threat"].get("bam", false):
+		if l["threat"] == null or not l["threat"].get("bam", false) or l["threat"].get("_bam_done", false):
 			continue
 		var t: Dictionary = l["threat"]
+		t["_bam_done"] = true
 		_log("威胁牌 BAM（%s）：%s" % [t["name"], t["text"]], Color(1, 0.75, 0.4))
 		match t["name"]:
 			"奥创克隆体":
@@ -1099,6 +1216,41 @@ func _trigger_all_threat_bam() -> void:
 				# 洛基威胁 BAM：对该地点的所有英雄都造成 1 点伤害
 				for hid in _heroes_at(i):
 					await _deal_damage_to_hero(hid, 1)
+			"电光人":
+				# 绿魔威胁 BAM：对相邻地点的每位英雄造成 1 点伤害（不包括电光人所在地点）
+				for adj in [(i + LOCATION_COUNT - 1) % LOCATION_COUNT, (i + 1) % LOCATION_COUNT]:
+					for hid in _heroes_at(adj):
+						await _deal_damage_to_hero(hid, 1)
+				_log("电光人：相邻地点的英雄各受到 1 点伤害", Color(1, 0.6, 0.4))
+			"猎人克莱文":
+				# 绿魔威胁 BAM：将此威胁卡移动到顺时针下一个有英雄、且无威胁卡的地点（尽可能执行），对该地点每位英雄造成 1 点伤害
+				var kk_target := -1
+				for step in range(1, LOCATION_COUNT + 1):
+					var kk_i: int = (i + step) % LOCATION_COUNT
+					if state["locations"][kk_i]["threat"] == null and _heroes_at(kk_i).size() > 0:
+						kk_target = kk_i
+						break
+				if kk_target >= 0:
+					state["locations"][kk_target]["threat"] = t
+					state["locations"][i]["threat"] = null
+					t["arrival_triggered"] = true
+					_log("猎人克莱文：移动到 %s" % _loc_name(kk_target), Color(1, 0.7, 0.4))
+					for hid in _heroes_at(kk_target):
+						await _deal_damage_to_hero(hid, 1)
+				else:
+					_log("猎人克莱文：没有可移动的有英雄且无威胁卡地点", Color(1, 0.6, 0.4))
+			"蜥蜴人":
+				# 绿魔威胁 BAM：该地点所有英雄合计承受 2 点伤害（英雄自行分配分摊）
+				var heroes_here: Array = _heroes_at(i).filter(func(h): return not state["heroes"][h]["ko"])
+				for dmg_idx in range(2):
+					if heroes_here.size() == 0:
+						break
+					var hnames: Array = []
+					for hh in heroes_here:
+						hnames.append(DB.hero_name(hh))
+					var picked: int = await _ask("蜥蜴人：第 %d 点伤害由哪个英雄承受？" % (dmg_idx + 1), hnames)
+					var hid2: String = heroes_here[wrapi(int(picked), 0, heroes_here.size())]
+					await _deal_damage_to_hero(hid2, 1)
 
 func _hero_crisis_block_damage(hid: String, dmg: int, cost: int) -> void:
 	var h: Dictionary = state["heroes"][hid]
@@ -1181,6 +1333,35 @@ func _trigger_threat_arrival(loc: int) -> void:
 			else:
 				VillainRules._km_replace_leftmost(self, loc)
 
+## 绿魔：从威胁牌堆抽一张威胁卡，沿顺时针（从 loc 起）放到第一个无威胁卡的地点；若有"放置暴徒"则放置。若牌堆空则提示。
+func _goblin_place_threat_from_deck(loc: int) -> void:
+	var deck: Array = state.get("goblin_threat_deck", [])
+	if deck.size() == 0:
+		_log("绿魔的威胁牌堆已空，无法放置威胁卡", Color(1, 0.5, 0.5))
+		return
+	# 找顺时针第一个无威胁卡的地点
+	var target := -1
+	for s in range(1, LOCATION_COUNT + 1):
+		var i: int = (loc + s) % LOCATION_COUNT
+		if state["locations"][i]["threat"] == null:
+			target = i
+			break
+	if target < 0:
+		_log("绿魔：没有空地点可放置威胁卡", Color(1, 0.5, 0.5))
+		return
+	var t: Dictionary = deck.pop_front()
+	t["hp"] = t.get("henchman_hp", 0)
+	t["heroic_tokens"] = 0
+	t["arrival_triggered"] = false
+	if t.has("clear"):
+		t["clear_progress"] = []
+	state["locations"][target]["threat"] = t
+	_log("绿魔放置威胁卡：%s（%s）" % [t["name"], _loc_name(target)], Color(1, 0.75, 0.4))
+	# 放置型威胁（企业爪牙）：放置时在此地点添加 1 个暴徒
+	if t.get("place_thug_on_setup", false):
+		await _place_token_at("thug", target, 1)
+	Events.emit_state_changed()
+
 func _do_placement(place: Array) -> void:
 	var vpos: int = state["villain_pos"]
 	var slots: Array = [place[0], place[1], place[2]]
@@ -1188,6 +1369,8 @@ func _do_placement(place: Array) -> void:
 	for s in range(3):
 		for t in slots[s]:
 			await _place_token_at(t, slot_locs[s], 1)
+			# 每个指示物放置后短暂停顿，让 UI 逐个出现（从左到右）
+			await _step_pause()
 
 func _place_token_at(kind: String, loc: int, count: int) -> void:
 	for c in range(count):
@@ -1207,6 +1390,8 @@ func _place_token_at(kind: String, loc: int, count: int) -> void:
 						_log("🏠 濒危地点！%s 守护的地点被撑爆，受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.5, 0.5))
 						await _deal_damage_to_hero(hid, 1)
 			await _overflow_token(kind, loc)
+		# 每次放置立即刷新 UI，让指示物逐格/逐地点同步出现（否则会全部放完后才一次性更新）
+		Events.emit_state_changed()
 
 func _overflow_token(kind: String, loc: int) -> void:
 	# 反派专属溢出处理交给 VillainRules（基础规则与反派规则分离）
@@ -1295,6 +1480,7 @@ func _start_hero_turn() -> void:
 	# 每回合重置英雄效果临时旗标
 	state["gamora_fury"] = false
 	state["token_double"] = false
+	state["gamora_bonus"] = 0   # 卡魔拉斩击：当前可用的"bonus攻击"数（不触发斩击）
 	if state["mode"] == "shield":
 		# 神盾局单人：每回合抽 1 张到共享手牌，然后打出任意一张（该英雄行动）
 		state["phase"] = "hero_draw"
@@ -1314,6 +1500,9 @@ func _start_hero_turn() -> void:
 		_revive_hero(hid)
 	else:
 		h["invulnerable"] = false
+		h["protect_last_card"] = false   # 蜘猪侠卡通精髓：下回合开始清除"最后一张牌不可弃置"
+		h["cartoon_web_armed"] = false   # 蜘猪侠卡通蛛网：下回合开始清除待触发标记
+		h["miles_web_armed"] = false   # 迈尔斯蛛网：下回合开始清除待触发标记
 	if h["hand"].size() == 0 and h["deck"].size() == 0 and h["discard"].size() == 0:
 		_lose("%s 回合开始无手牌无牌库，英雄们失败了。" % DB.hero_name(hid))
 		return
@@ -1324,12 +1513,16 @@ func _start_hero_turn() -> void:
 	var virus := false
 	# 折磨摧残（乌木侯威胁）：在此地点开始回合的英雄不会从故事情节中的前一张英雄卡中获得行动
 	state["no_prev_symbols"] = false
-	if l["threat"] != null and l["threat"].get("start_turn", false):
+	if l["threat"] != null and l["threat"].get("start_turn", false) and l["threat"]["name"] != "太空伏击":
 		state["no_prev_symbols"] = true
 		_log("折磨摧残：%s 本回合不会获得上一张英雄卡的符号" % DB.hero_name(hid), Color(1, 0.8, 0.4))
-	if l["threat"] != null and l["threat"].get("start_turn", false) and l["threat"]["name"] != "折磨摧残":
+	if l["threat"] != null and l["threat"].get("start_turn", false) and l["threat"]["name"] != "折磨摧残" and l["threat"]["name"] != "太空伏击":
 		virus = true
 		_log("奥创病毒：%s 必须选择一个行动符号并忽略它" % DB.hero_name(hid), Color(1, 0.8, 0.4))
+	# 罗南·太空伏击：在此地点开始回合的英雄受到 1 点伤害
+	if l["threat"] != null and l["threat"]["name"] == "太空伏击" and not h["ko"]:
+		_log("太空伏击：%s 开始回合受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.6, 0.4))
+		await _deal_damage_to_hero(hid, 1)
 	if l["threat"] != null and l["threat"]["name"] == "九头蛇特工鲍勃":
 		h["crisis"] += 1
 		_log("%s 获得 1 危机指示物（鲍勃）" % DB.hero_name(hid), Color(0.7, 0.7, 1))
@@ -1384,9 +1577,22 @@ func play_card(hand_idx: int) -> void:
 		state["prev_hero_symbols"] = _last_hero_card_symbols()
 	state["action_symbols"].append_array(state["prev_hero_symbols"])
 	state["used_tokens"] = {"move": 0, "attack": 0, "heroic": 0, "wild": 0}
-	state["effect_available"] = cards[card_idx].has("effect")
+	var peff: Variant = cards[card_idx].get("effect", null)
+	# 卡通蛛网（蜘猪侠）/ 迈尔斯蛛网（迈尔斯）是被动效果：打出即标记"待触发"，不占效果按钮（结束回合时自动生效）
+	var peff_type: String = peff.get("type", "") if peff != null else ""
+	match peff_type:
+		"cartoon_web":
+			state["heroes"][hid]["cartoon_web_armed"] = true
+			_log("卡通蛛网：已标记，若在反派所在地点结束回合则取消下一次反派移动", Color(1, 0.85, 0.4))
+			state["effect_available"] = false
+		"miles_web":
+			state["heroes"][hid]["miles_web_armed"] = true
+			_log("迈尔斯蛛网：已标记，若在反派所在地点结束回合则推迟反派下一个回合", Color(0.7, 0.9, 1))
+			state["effect_available"] = false
+		_:
+			state["effect_available"] = peff != null
 	state["effect_used"] = false
-	state["played_effect"] = cards[card_idx].get("effect", null)
+	state["played_effect"] = peff
 	state["phase"] = "hero_actions"
 	# 无限战争决战：结算能量卡效果（每凑齐 cost → 获得 gain；产出行动不能用于解锁/触发其他能量卡）
 	# 灭霸作为非无限战争 Boss 时同样生效（已激活能量卡）
@@ -1460,8 +1666,12 @@ func use_symbol(sym: String) -> void:
 	var is_token := sym.begins_with("token_")
 	var base := sym.substr(6) if is_token else sym
 	if base == "wild":
-		var choice = await _ask("万能行动：选择用途", ["移动", "攻击", "英勇"])
+		var choice = await _ask("万能行动：选择用途", ["移动", "攻击", "英勇", "返回"])
 		var ci := int(choice)
+		if ci == 3:
+			# 返回：不消耗万能，重新选择行动
+			Events.emit_state_changed()
+			return
 		match ci:
 			0: base = "move"
 			1: base = "attack"
@@ -1490,6 +1700,17 @@ func use_symbol(sym: String) -> void:
 				state["action_symbols"].append("wild")
 			Events.emit_state_changed()
 			return
+		# 卡魔拉·斩击：使用攻击行动前先结算额外攻击，避免"最后一个攻击被 auto_end_turn 提前结束回合"。
+		# bonus 攻击不再触发（防套娃）；普通攻击先 +1 一个 attack 符号，后续 _maybe_auto_end_turn 仍能看到它。
+		if state.get("gamora_fury", false) and base == "attack":
+			if int(state.get("gamora_bonus", 0)) > 0:
+				# 本次是斩击额外给的 bonus 攻击：消耗它，不再产生新攻击
+				state["gamora_bonus"] = int(state["gamora_bonus"]) - 1
+			else:
+				# 本次是普通攻击：先获得 1 个额外攻击（标记为 bonus）
+				state["action_symbols"].append("attack")
+				state["gamora_bonus"] = int(state.get("gamora_bonus", 0)) + 1
+				_log("卡魔拉·斩击：获得 1 个额外攻击行动", Color(1, 0.5, 0.5))
 		match base:
 			"move":
 				_execute_move(hid, "wild_token" if is_token else "wild_symbol")
@@ -1497,6 +1718,10 @@ func use_symbol(sym: String) -> void:
 				_execute_attack(hid, "wild_token" if is_token else "wild_symbol")
 			"heroic":
 				_execute_heroic(hid, "wild_token" if is_token else "wild_symbol")
+		# 火箭·天才技师（用1当2）：万能指示物也执行两次
+		if state.get("token_double", false) and is_token:
+			state["action_symbols"].append(base)
+			_log("天才技师：%s 指示物执行两次行动" % DB.symbol_name(base), Color(1, 0.85, 0.4))
 		Events.emit_state_changed()
 		return
 	# 普通符号：先扣除，再询问是否用于填充能量卡；选"返回"则归还
@@ -1525,6 +1750,17 @@ func use_symbol(sym: String) -> void:
 		Events.emit_state_changed()
 		return
 	# use：正常执行
+	# 卡魔拉·斩击：使用攻击行动前先结算额外攻击，避免"最后一个攻击被 auto_end_turn 提前结束回合"。
+	# bonus 攻击不再触发（防套娃）；普通攻击先 +1 一个 attack 符号，后续 _maybe_auto_end_turn 仍能看到它。
+	if state.get("gamora_fury", false) and base == "attack":
+		if int(state.get("gamora_bonus", 0)) > 0:
+			# 本次是斩击额外给的 bonus 攻击：消耗它，不再产生新攻击
+			state["gamora_bonus"] = int(state["gamora_bonus"]) - 1
+		else:
+			# 本次是普通攻击：先获得 1 个额外攻击（标记为 bonus）
+			state["action_symbols"].append("attack")
+			state["gamora_bonus"] = int(state.get("gamora_bonus", 0)) + 1
+			_log("卡魔拉·斩击：获得 1 个额外攻击行动", Color(1, 0.5, 0.5))
 	match base:
 		"move":
 			_execute_move(hid, "token" if is_token else "symbol")
@@ -1532,11 +1768,7 @@ func use_symbol(sym: String) -> void:
 			_execute_attack(hid, "token" if is_token else "symbol")
 		"heroic":
 			_execute_heroic(hid, "token" if is_token else "symbol")
-	# 卡魔拉·斩击：每用一次万能/攻击符号 → 额外 +1 攻击（效果获得的攻击不再触发）
-	if state.get("gamora_fury", false) and base == "attack":
-		state["action_symbols"].append("attack")
-		_log("卡魔拉·斩击：获得 1 个额外攻击行动", Color(1, 0.5, 0.5))
-	# 火箭·天才技师（用1当2）：使用行动指示物时，额外 +1 对应符号
+	# 火箭·天才技师（用1当2）：行动指示物（含万能指示物）额外 +1 对应符号
 	if state.get("token_double", false) and is_token:
 		state["action_symbols"].append(base)
 		_log("天才技师：%s 指示物执行两次行动" % DB.symbol_name(base), Color(1, 0.85, 0.4))
@@ -1589,6 +1821,49 @@ func _offer_energy_or_use(base: String, consumed: String, hid: String) -> String
 	await _maybe_auto_end_turn()
 	return "fill"
 
+## 罗南威胁卡符号清除：若当前地点威胁卡有 clear 字段且可用当前符号填充，询问是否填入。
+## 返回 true 表示已填入（调用方应停止本次常规行动）；false 表示继续常规行动。
+## sym 为实际符号（move/attack/heroic）。
+## 该地点威胁卡是否可用 sym 符号再填一次（罗南 clear 型威胁卡）。
+func _ronan_threat_can_fill(loc: int, sym: String) -> bool:
+	var l: Dictionary = state["locations"][loc]
+	var t: Variant = l["threat"]
+	if t == null or not t.has("clear"):
+		return false
+	var clear: Array = t["clear"]
+	var filled: Array = t.get("clear_progress", [])
+	return filled.count(sym) < clear.count(sym)
+
+## 威胁卡需填符号总数。
+func _ronan_threat_size(loc: int) -> int:
+	var t: Variant = state["locations"][loc]["threat"]
+	if t == null or not t.has("clear"):
+		return 0
+	return int(t["clear"].size())
+
+## 威胁卡已填符号数。
+func _ronan_threat_filled(loc: int) -> int:
+	var t: Variant = state["locations"][loc]["threat"]
+	if t == null or not t.has("clear"):
+		return 0
+	return int(t.get("clear_progress", []).size())
+
+## 向当前地点威胁卡填入一个符号；填满则清除威胁（作为行动选项调用，不弹窗询问）。
+func _fill_ronan_threat(hid: String, loc: int, sym: String) -> void:
+	var l: Dictionary = state["locations"][loc]
+	var t: Dictionary = l["threat"]
+	if t == null or not t.has("clear"):
+		return
+	var filled: Array = t.get("clear_progress", [])
+	filled.append(sym)
+	t["clear_progress"] = filled
+	var total: int = t["clear"].size()
+	_log("%s 用%s符号填充威胁卡 %s（%d/%d）" % [DB.hero_name(hid), DB.symbol_name(sym), t["name"], filled.size(), total], Color(0.7, 1, 0.9))
+	Events.emit_state_changed()
+	if filled.size() >= total:
+		_log("威胁卡【%s】符号填满，威胁清除！" % t["name"], Color(0.6, 1, 0.8))
+		_clear_threat(loc)
+
 func _consume_symbol(base: String, is_token: bool, hid: String) -> void:
 	if not is_token:
 		var idx: int = state["action_symbols"].find(base)
@@ -1621,35 +1896,32 @@ func _execute_move(hid: String, consumed: String) -> void:
 		_log("空间宝石：%s 的移动行动被忽略" % DB.hero_name(hid), Color(1, 0.7, 0.9))
 		Events.emit_state_changed()
 		return
-	var entangle := false
-	if l["threat"] != null and l["threat"]["name"] == "纠缠陷阱":
-		entangle = true
-	if entangle:
-		# 纠缠陷阱：离开该地点需要消耗 2 个移动行动（本次 1 个 + 再补 1 个）
-		var remaining: int = state["action_symbols"].count("move")
-		var pool: Dictionary = state["shield_tokens"] if state["mode"] == "shield" else h["tokens"]
-		var tok_avail: int = pool["move"]
-		if remaining + tok_avail < 1:
-			Events.emit_toast("纠缠陷阱：离开需要 2 个移动行动（不足），已返还本次移动")
-			_refund_symbol(hid, "move", consumed)
-			return
-		var idx: int = state["action_symbols"].find("move")
-		if idx != -1:
-			state["action_symbols"].remove_at(idx)
-		else:
-			pool["move"] -= 1
-		_log("%s 消耗 2 个移动行动脱离纠缠陷阱" % DB.hero_name(hid), Color(0.9, 0.8, 0.5))
+	# 越狱/纠缠陷阱：移动"离开该地点"需消耗 2 个移动行动（仅影响真正移动离开，不干扰用移动填充威胁）
+	var jammed := false
+	if l["threat"] != null and (l["threat"]["name"] == "纠缠陷阱" or l["threat"]["name"] == "越狱"):
+		jammed = true
+	# 先构建选项，玩家选择后按所选处理（移动离开 才受 jammed 限制；填充/跳过/返回不受）
 	var opts: Array = [loc - 1, loc + 1]
 	var names: Array = []
 	for o in opts:
 		names.append(_loc_name(wrapi(o, 0, LOCATION_COUNT)))
+	# 罗南威胁卡：可用"移动行动"填充（作为移动选项之一，与正常威胁卡一致）
+	var fill_idx := -1
+	if _ronan_threat_can_fill(loc, "move"):
+		fill_idx = names.size()
+		names.append("用移动行动填充威胁（%d/%d）" % [_ronan_threat_filled(loc), _ronan_threat_size(loc)])
 	names.append("跳过行动")
-	if not entangle:
-		names.append("返回")  # 纠缠场景涉及额外消耗，不提供返回
+	if not jammed:
+		names.append("返回")  # 越狱/纠缠陷阱场景涉及额外消耗，不提供返回
 	var choice = await _ask("选择移动目的地", names)
 	var ci := int(choice)
+	# ① 用移动填充威胁：只耗本次移动，不走"离开需2移动"逻辑
+	if fill_idx >= 0 and ci == fill_idx:
+		_log("%s 使用移动行动填充威胁（越狱/纠缠陷阱不影响填充）" % DB.hero_name(hid), Color(0.7, 1, 0.9))
+		_fill_ronan_threat(hid, loc, "move")
+		return
 	if ci >= opts.size():
-		if not entangle and ci == names.size() - 1:
+		if not jammed and ci == names.size() - 1:
 			# 返回：归还本次消耗的移动行动，重新选择行动
 			_refund_symbol(hid, "move", consumed)
 			_log("%s 返回（移动行动已归还）" % DB.hero_name(hid), Color(0.8, 0.8, 0.8))
@@ -1659,6 +1931,21 @@ func _execute_move(hid: String, consumed: String) -> void:
 		_log("%s 跳过移动行动" % DB.hero_name(hid), Color(0.8, 0.8, 0.8))
 		Events.emit_state_changed()
 		return
+	# ② 真正移动离开：若处于越狱/纠缠陷阱，需额外消耗 1 个移动行动
+	if jammed:
+		var remaining: int = state["action_symbols"].count("move")
+		var pool: Dictionary = state["shield_tokens"] if state["mode"] == "shield" else h["tokens"]
+		var tok_avail: int = pool["move"]
+		if remaining + tok_avail < 1:
+			Events.emit_toast("越狱/纠缠陷阱：离开需要 2 个移动行动（不足），已返还本次移动")
+			_refund_symbol(hid, "move", consumed)
+			return
+		var idx: int = state["action_symbols"].find("move")
+		if idx != -1:
+			state["action_symbols"].remove_at(idx)
+		else:
+			pool["move"] -= 1
+		_log("%s 消耗 2 个移动行动脱离越狱/纠缠陷阱" % DB.hero_name(hid), Color(0.9, 0.8, 0.5))
 	var oi := wrapi(int(opts[ci]), 0, LOCATION_COUNT)
 	state["heroes"][hid]["location"] = oi
 	_log("%s 移动到 %s" % [DB.hero_name(hid), _loc_name(oi)], Color(0.8, 0.9, 1))
@@ -1698,7 +1985,9 @@ func _execute_attack(hid: String, consumed: String) -> void:
 	var crisis_option := false
 	if state["villain"] == "taskmaster" and l["civ"] == 0 and l["thug"] == 0 and l["crisis"] > 0:
 		crisis_option = true
-	if targets.size() == 0 and not crisis_option:
+	# 罗南威胁卡：可用"攻击行动"填充（作为攻击选项之一，与正常威胁卡一致）
+	var can_fill: bool = _ronan_threat_can_fill(loc, "attack")
+	if targets.size() == 0 and not crisis_option and not can_fill:
 		Events.emit_toast("此地没有可攻击的目标")
 		return
 	var names: Array = []
@@ -1706,10 +1995,17 @@ func _execute_attack(hid: String, consumed: String) -> void:
 		names.append(_target_name(t))
 	if crisis_option:
 		names.append("清除 1 个危机指示物")
+	var fill_idx := -1
+	if can_fill:
+		fill_idx = names.size()
+		names.append("用攻击行动填充威胁（%d/%d）" % [_ronan_threat_filled(loc), _ronan_threat_size(loc)])
 	names.append("跳过行动")
 	names.append("返回")
 	var choice = await _ask("选择攻击目标", names)
 	var ci := int(choice)
+	if fill_idx >= 0 and ci == fill_idx:
+		_fill_ronan_threat(hid, loc, "attack")
+		return
 	if ci >= names.size() - 2:
 		if ci == names.size() - 1:
 			# 返回：归还本次消耗的攻击行动，重新选择行动
@@ -1721,7 +2017,7 @@ func _execute_attack(hid: String, consumed: String) -> void:
 		_log("%s 跳过攻击行动" % DB.hero_name(hid), Color(0.8, 0.8, 0.8))
 		Events.emit_state_changed()
 		return
-	if crisis_option and ci >= targets.size():
+	if crisis_option and ci >= targets.size() and (fill_idx < 0 or ci < fill_idx):
 		l["crisis"] -= 1
 		_log("%s 清除 1 个危机指示物（%s）" % [DB.hero_name(hid), _loc_name(loc)], Color(0.7, 0.7, 1))
 		Events.emit_state_changed()
@@ -1761,6 +2057,17 @@ func _perform_attack_at(loc: int, tgt: String, hid: String) -> void:
 					if lthreat != null and lthreat["name"] == "幻象":
 						real_dmg = 0
 						_log("幻象：洛基在该地点不受任何伤害（攻击无效）", Color(0.7, 0.9, 0.9))
+				# 绿魔·以平民为盾：绿魔所在地点有"以平民为盾"威胁卡且该地点有平民 → 绿魔免受伤害
+				if state["villain"] == "goblin" and real_dmg > 0:
+					var gvpos: int = state["villain_pos"]
+					var gthreat: Variant = state["locations"][gvpos]["threat"]
+					if gthreat != null and gthreat["name"] == "以平民为盾" and state["locations"][gvpos]["civ"] > 0:
+						real_dmg = 0
+						_log("以平民为盾：该地点有平民，绿魔免受伤害（攻击无效）", Color(0.7, 0.9, 0.9))
+					# 绿魔面板有被绑架的平民指示物 → 绿魔免受伤害
+					elif int(state.get("goblin_panel_civ", 0)) > 0:
+						real_dmg = 0
+						_log("绿魔面板有平民，绿魔免受伤害（攻击无效）", Color(0.7, 0.9, 0.9))
 				state["villain_hp"] -= real_dmg
 				_log("%s 攻击反派！生命 %d/%d" % [DB.hero_name(hid), state["villain_hp"], state["villain_hp_max"]], Color(1, 0.9, 0.3))
 				# 洛基-诡计大师威胁：洛基受到伤害，该地点的每个英雄也受到 1 点伤害
@@ -1793,7 +2100,9 @@ func _attack_once_at(hid: String, loc: int, label: String, times: int = 1) -> vo
 	var crisis_option := false
 	if state["villain"] == "taskmaster" and l["civ"] == 0 and l["thug"] == 0 and l["crisis"] > 0:
 		crisis_option = true
-	if targets.size() == 0 and not crisis_option:
+	# 罗南威胁卡：可用"攻击行动"填充（作为效果攻击的目标选项之一）
+	var can_fill: bool = _ronan_threat_can_fill(loc, "attack")
+	if targets.size() == 0 and not crisis_option and not can_fill:
 		Events.emit_toast("该地点没有可攻击的目标")
 		return
 	var names: Array = []
@@ -1801,8 +2110,15 @@ func _attack_once_at(hid: String, loc: int, label: String, times: int = 1) -> vo
 		names.append(_target_name(t))
 	if crisis_option:
 		names.append("清除 1 个危机指示物")
+	var fill_idx := -1
+	if can_fill:
+		fill_idx = names.size()
+		names.append("用攻击行动填充威胁（%d/%d）" % [_ronan_threat_filled(loc), _ronan_threat_size(loc)])
 	var choice = await _ask(label + "：选择攻击目标", names)
 	var ci := int(choice)
+	if fill_idx >= 0 and ci == fill_idx:
+		_fill_ronan_threat(hid, loc, "attack")
+		return
 	if ci >= targets.size() and crisis_option and ci < names.size():
 		l["crisis"] -= 1
 		_log("%s 用攻击清除 1 个危机指示物（%s）" % [DB.hero_name(hid), _loc_name(loc)], Color(0.7, 0.7, 1))
@@ -1829,6 +2145,8 @@ func _damage_thug_at(loc: int, dmg: int, hid: String) -> void:
 		elif l["threat"]["name"] == "精锐暴徒" or l["threat"]["name"] == "九头蛇精英部队":
 			need = 2
 		elif l["threat"]["name"] == "雇佣兵":
+			need = 2
+		elif l["threat"]["name"] == "克里精英部队":
 			need = 2
 	if need > 1:
 		# 简化：本地点所有暴徒共享伤害计数，每 need 伤消灭1个
@@ -1859,6 +2177,14 @@ func _clear_threat(loc: int, hid: String = "") -> void:
 	_log("威胁清除：%s（%s）" % [t["name"], _loc_name(loc)], Color(0.6, 1, 0.8))
 	l["threat"] = null
 	l["threat_token"] = false
+	# 绿魔特殊：威胁卡清除后混洗放回绿魔牌堆（可再次被抽出），从供应堆拿威胁指示物放任务牌。
+	if state["villain"] == "goblin":
+		state["goblin_threat_deck"].append(t)
+		state["goblin_threat_deck"].shuffle()
+		_add_mission_token("clear", 1, hid)
+		_log("绿魔：威胁卡 %s 混洗放回牌堆，供应堆放置 1 个威胁指示物到任务牌" % t["name"], Color(0.7, 1, 0.9))
+		Events.emit_state_changed()
+		return
 	# 记录"被解决的威胁卡"，供洛基行动卡1（幻象大师）取用
 	state["solved_threats"].append(t)
 	# 无限战争：能量卡若有"威胁"空槽（第7张），可把威胁指示物放到能量卡上代替任务卡（任意顺序）
@@ -1890,27 +2216,35 @@ func _clear_threat(loc: int, hid: String = "") -> void:
 		_add_mission_token("clear", 1, hid)
 	Events.emit_state_changed()
 
-## 至圣所回合结束：在"任意地点威胁卡"或"能量卡"上放置 1 个对应指示物（目前均为英勇/威胁）。
+## 至圣所回合结束：在"任意地点威胁卡"或"能量卡"上放置 1 个指示物。
+## 放置的指示物类型由目标威胁卡决定：普通威胁卡放英勇；罗南 clear 型威胁卡放其所需符号（移动/英勇/攻击）。
 ## 本地点威胁卡可放则优先放；否则让英雄选择场上任意威胁卡或能量卡。
 func _sanctum_place_token(hid: String, loc: int) -> void:
 	var l: Dictionary = state["locations"][loc]
 	var local_threat: Variant = l["threat"]
-	# 本地点威胁卡可放（未清除、未满英勇指示物）
-	if local_threat != null and int(local_threat["hp"]) == 0 and int(local_threat.get("heroic_tokens", 0)) < THREAT_CLEAR_TOKENS:
-		if await _ask_confirm("至圣所：在本地威胁卡上放置 1 个英勇指示物？"):
-			local_threat["heroic_tokens"] = int(local_threat.get("heroic_tokens", 0)) + 1
-			_log("至圣所：%s 的威胁卡英勇指示物 %d/%d" % [local_threat["name"], local_threat["heroic_tokens"], THREAT_CLEAR_TOKENS], Color(0.7, 1, 0.9))
-			if int(local_threat["heroic_tokens"]) >= THREAT_CLEAR_TOKENS:
-				_clear_threat(loc)
-		return
-	# 本地点无威胁卡：收集可选目标（场上任意可放的威胁卡 + 能量卡），让英雄选择
+	# 本地点威胁卡可放（未清除）：优先直接放一个符合条件的指示物
+	if local_threat != null and int(local_threat["hp"]) == 0:
+		var local_sym: String = _threat_placeable_sym(local_threat)
+		if local_sym != "":
+			if await _ask_confirm("至圣所：在本地威胁卡上放置 1 个%s指示物？" % DB.symbol_name(local_sym)):
+				_place_threat_token(hid, loc, local_sym)
+			return
+	# 本地点无威胁卡 / 威胁卡无可放符号：收集可选目标（场上任意可放的威胁卡 + 能量卡），让英雄选择
 	var opts: Array = []
-	var targets: Array = []   # 与 opts 一一对应：{"type":"threat","loc":i} / {"type":"energy","eidx":j}
+	var targets: Array = []   # 与 opts 一一对应：{"type":"threat","loc":i,"sym":s} / {"type":"energy","eidx":j,"slot":k}
+	var threat_found := false
 	for i in range(LOCATION_COUNT):
 		var t: Variant = state["locations"][i]["threat"]
-		if t != null and t["hp"] == 0 and int(t.get("heroic_tokens", 0)) < THREAT_CLEAR_TOKENS:
-			opts.append("%s\n%s" % [_loc_name(i), t["name"]])
-			targets.append({"type": "threat", "loc": i})
+		if t != null and t["hp"] == 0:
+			var sym: String = _threat_placeable_sym(t)
+			if sym != "":
+				opts.append("%s\n%s（放%s）" % [_loc_name(i), t["name"], DB.symbol_name(sym)])
+				targets.append({"type": "threat", "loc": i, "sym": sym})
+				threat_found = true
+	# 场上没有可放置指示物的威胁卡：不触发此效果（即使有能量卡）
+	if not threat_found:
+		_log("至圣所：场上没有可放置指示物的威胁卡，效果不触发", Color(0.8, 0.9, 0.9))
+		return
 	# 能量卡（无限战争）：可填入的槽（优先"threat"槽，其次任意空槽）
 	if state.get("mode", "base") == "iw" and not state.get("final_battle", false):
 		for eidx in [int(state.get("table_energy", -1)), int(state.get("hidden_energy", -1))]:
@@ -1931,16 +2265,12 @@ func _sanctum_place_token(hid: String, loc: int) -> void:
 	# 追加"放弃"（可取消，至圣所文案"可以...放置"，无强制字眼）
 	opts.append("放弃（不放置指示物）")
 	targets.append({"type": "none"})
-	var choice: int = await _ask("至圣所：选择要放置 1 个英勇指示物的目标", opts)
+	var choice: int = await _ask("至圣所：选择要放置 1 个指示物的目标", opts)
 	var tgt: Dictionary = targets[wrapi(int(choice), 0, targets.size())]
 	if tgt["type"] == "none":
 		return
 	if tgt["type"] == "threat":
-		var thr: Variant = state["locations"][tgt["loc"]]["threat"]
-		thr["heroic_tokens"] = int(thr.get("heroic_tokens", 0)) + 1
-		_log("至圣所：%s 的威胁卡英勇指示物 %d/%d" % [thr["name"], thr["heroic_tokens"], THREAT_CLEAR_TOKENS], Color(0.7, 1, 0.9))
-		if int(thr["heroic_tokens"]) >= THREAT_CLEAR_TOKENS:
-			_clear_threat(int(tgt["loc"]))
+		_place_threat_token(hid, int(tgt["loc"]), tgt["sym"])
 	else:
 		var eidx: int = int(tgt["eidx"])
 		var filled2: Array = energy_filled_slots(eidx)
@@ -1950,6 +2280,57 @@ func _sanctum_place_token(hid: String, loc: int) -> void:
 			_log("至圣所：威胁指示物放到能量卡 %d（%d/%d）" % [energy_local_no(eidx), filled2.size(), energy_required_syms(eidx).size()], Color(0.7, 1, 0.9))
 			if filled2.size() >= energy_required_syms(eidx).size():
 				_unlock_energy_card(eidx)
+	Events.emit_state_changed()
+
+## 返回某威胁卡当前还能放置的符号类型；无可放符号返回 ""。
+## 普通威胁卡（hp==0 且无 clear）→ "heroic"（英勇槽未满）。罗南 clear 型 → clear 中尚未填满的符号。
+func _threat_placeable_sym(t: Dictionary) -> String:
+	# 爪牙型威胁卡（hp>0）靠攻击击败，没有任何"放置指示物"的槽 → 不可放
+	if int(t.get("hp", 0)) > 0:
+		return ""
+	if t.has("clear"):
+		var syms: Array = t["clear"]
+		# 找出 clear 中还未填满的符号（任意一个可放的）；若多个可放，优先移动>攻击>英勇
+		for sym in ["move", "attack", "heroic"]:
+			if _sym_can_fill(t, sym):
+				return sym
+		return ""
+	if int(t.get("heroic_tokens", 0)) >= THREAT_CLEAR_TOKENS:
+		return ""
+	return "heroic"
+
+## 威胁卡是否还能用 sym 符号填一次（罗南 clear 型专用）。
+func _sym_can_fill(t: Dictionary, sym: String) -> bool:
+	if t == null or not t.has("clear"):
+		return false
+	var clear: Array = t["clear"]
+	var filled: Array = t.get("clear_progress", [])
+	return filled.count(sym) < clear.count(sym)
+
+## 向威胁卡放置 1 个符号指示物。放置的符号由该威胁卡"需要什么行动"决定（_threat_placeable_sym）：
+##   普通威胁卡（无 clear）→ 英勇；罗南/绿魔等 clear 型 → 其 clear 数组中尚未填满的符号（移动/攻击/英勇）。
+## subject 为主体名（至圣所/克林监狱等），仅用于日志显示，不同主体复用此底层规则。
+func _place_threat_token(hid: String, loc: int, sym: String = "", subject: String = "至圣所") -> void:
+	var t: Dictionary = state["locations"][loc]["threat"]
+	if t == null:
+		return
+	# 看该威胁卡需要什么行动符号（需求驱动；若外部传的符号为空/不符则用需求符号）
+	var need: String = _threat_placeable_sym(t)
+	if need == "":
+		_log("%s：%s 的威胁卡没有可放置的符号" % [subject, t["name"]], Color(0.8, 0.9, 0.9))
+		return
+	if t.has("clear"):
+		var filled: Array = t.get("clear_progress", [])
+		filled.append(need)
+		t["clear_progress"] = filled
+		_log("%s：%s 的威胁卡放置 %s 指示物（%d/%d）" % [subject, t["name"], DB.symbol_name(need), filled.size(), t["clear"].size()], Color(0.7, 1, 0.9))
+		if filled.size() >= t["clear"].size():
+			_clear_threat(loc)
+	else:
+		t["heroic_tokens"] = int(t.get("heroic_tokens", 0)) + 1
+		_log("%s：%s 的威胁卡英勇指示物 %d/%d" % [subject, t["name"], t["heroic_tokens"], THREAT_CLEAR_TOKENS], Color(0.7, 1, 0.9))
+		if int(t["heroic_tokens"]) >= THREAT_CLEAR_TOKENS:
+			_clear_threat(loc)
 	Events.emit_state_changed()
 
 func _add_mission_token(mission_id: String, n: int, hid: String = "") -> void:
@@ -1996,9 +2377,17 @@ func _execute_heroic(hid: String, consumed: String) -> void:
 	if l["civ"] > 0:
 		options.append("营救平民（需%d英勇）" % rescue_cost)
 	if l["threat"] != null and l["threat"]["hp"] == 0:
-		options.append("放置英勇指示物清除威胁（%d/3）" % (l["threat"]["heroic_tokens"] + 1))
+		if l["threat"].has("clear"):
+			# 罗南威胁卡：用英勇行动填充（作为英勇选项之一，与正常威胁卡一致）
+			if _ronan_threat_can_fill(loc, "heroic"):
+				options.append("用英勇行动填充威胁（%d/%d）" % [_ronan_threat_filled(loc), _ronan_threat_size(loc)])
+		else:
+			options.append("放置英勇指示物清除威胁（%d/3）" % (l["threat"]["heroic_tokens"] + 1))
 	if state["villain"] == "taskmaster" and l["civ"] == 0 and l["thug"] == 0 and l["crisis"] > 0:
 		options.append("清除 1 个危机指示物")
+	# 绿魔：只有英雄在绿魔所在地点，才能用两次英勇行动营救 1 个绿魔面板上的平民
+	if state["villain"] == "goblin" and int(state.get("goblin_panel_civ", 0)) > 0 and loc == state["villain_pos"]:
+		options.append("营救绿魔面板平民（需2英勇）")
 	if options.size() == 0:
 		Events.emit_toast("此地没有可用的英勇行动")
 		return
@@ -2030,9 +2419,17 @@ func _execute_heroic(hid: String, consumed: String) -> void:
 		_log("%s 在威胁卡上放置英勇指示物（%d/3）" % [DB.hero_name(hid), l["threat"]["heroic_tokens"]], Color(0.7, 1, 0.9))
 		if l["threat"]["heroic_tokens"] >= THREAT_CLEAR_TOKENS:
 			_clear_threat(loc)
+	elif picked.contains("填充威胁"):
+		_fill_ronan_threat(hid, loc, "heroic")
 	elif picked.contains("危机"):
 		l["crisis"] -= 1
 		_log("%s 清除 1 个危机指示物（%s）" % [DB.hero_name(hid), _loc_name(loc)], Color(0.7, 0.7, 1))
+	elif picked.contains("绿魔面板"):
+		# 绿魔：用两次英勇营救 1 个绿魔面板上的平民（需额外消耗 1 个英勇）
+		if await _consume_extra_heroic(1):
+			state["goblin_panel_civ"] = int(state.get("goblin_panel_civ", 0)) - 1
+			_add_mission_token("rescue", 1, hid)
+			_log("%s 营救了 1 个绿魔面板平民（面板剩余 %d）" % [DB.hero_name(hid), maxi(state.get("goblin_panel_civ", 0), 0)], Color(0.7, 1, 0.9))
 	Events.emit_state_changed()
 	await _maybe_auto_end_turn()
 
@@ -2296,13 +2693,16 @@ func trigger_effect() -> void:
 			_log("卡魔拉·斩击：本回合每用万能/攻击符号，额外获得 1 个攻击行动", Color(0.9, 0.9, 0.5))
 		"get_groot_q":
 			# 格鲁特·我是格鲁特？：选择一名其他英雄，移到其相邻地点
-			var gq_targets: Array = []
+			var gq_tgts: Array = []
 			for hh in state["hero_ids"]:
 				if hh != hid:
-					gq_targets.append(DB.hero_name(hh))
-			if gq_targets.size() > 0:
-				var gq_t: int = await _ask("我是格鲁特？：选择一名其他英雄", gq_targets)
-				var gq_hid: String = state["hero_ids"][wrapi(int(gq_t), 0, state["hero_ids"].size())]
+					gq_tgts.append(hh)
+			if gq_tgts.size() > 0:
+				var gq_names: Array = []
+				for hh in gq_tgts:
+					gq_names.append(DB.hero_name(hh))
+				var gq_t: int = await _ask("我是格鲁特？：选择一名其他英雄", gq_names)
+				var gq_hid: String = gq_tgts[wrapi(int(gq_t), 0, gq_tgts.size())]
 				var gq_loc: int = state["heroes"][gq_hid]["location"]
 				var gq_adj: Array = [(gq_loc + LOCATION_COUNT - 1) % LOCATION_COUNT, (gq_loc + 1) % LOCATION_COUNT]
 				var gq_nm: Array = [_loc_name(gq_adj[0]), _loc_name(gq_adj[1])]
@@ -2312,27 +2712,125 @@ func trigger_effect() -> void:
 				_log("格鲁特：%s 移动到 %s" % [DB.hero_name(gq_hid), _loc_name(gq_new)], Color(0.8, 0.9, 1))
 		"get_groot":
 			# 格鲁特·我是格鲁特！：选择一名其他英雄，你与该英雄在各自所在地点各攻击一次
-			var gg_targets: Array = []
+			var gg_tgts: Array = []
 			for hh in state["hero_ids"]:
 				if hh != hid:
-					gg_targets.append(DB.hero_name(hh))
-			if gg_targets.size() > 0:
-				var gg_t: int = await _ask("我是格鲁特！：选择一名其他英雄", gg_targets)
-				var gg_hid: String = state["hero_ids"][wrapi(int(gg_t), 0, state["hero_ids"].size())]
+					gg_tgts.append(hh)
+			if gg_tgts.size() > 0:
+				var gg_names: Array = []
+				for hh in gg_tgts:
+					gg_names.append(DB.hero_name(hh))
+				var gg_t: int = await _ask("我是格鲁特！：选择一名其他英雄", gg_names)
+				var gg_hid: String = gg_tgts[wrapi(int(gg_t), 0, gg_tgts.size())]
 				await _attack_once_at(hid, state["heroes"][hid]["location"], "格鲁特")
 				await _attack_once_at(gg_hid, state["heroes"][gg_hid]["location"], "格鲁特同伴")
 		"we_are_groot":
 			# 格鲁特·我们是格鲁特：选择一名其他英雄，你与其各抽一张牌
-			var wg_targets: Array = []
+			var wg_tgts: Array = []
 			for hh in state["hero_ids"]:
 				if hh != hid:
-					wg_targets.append(DB.hero_name(hh))
-			if wg_targets.size() > 0:
-				var wg_t: int = await _ask("我们是格鲁特：选择一名其他英雄", wg_targets)
-				var wg_hid: String = state["hero_ids"][wrapi(int(wg_t), 0, state["hero_ids"].size())]
+					wg_tgts.append(hh)
+			if wg_tgts.size() > 0:
+				var wg_names: Array = []
+				for hh in wg_tgts:
+					wg_names.append(DB.hero_name(hh))
+				var wg_t: int = await _ask("我们是格鲁特：选择一名其他英雄", wg_names)
+				var wg_hid: String = wg_tgts[wrapi(int(wg_t), 0, wg_tgts.size())]
 				_draw_card(hid)
 				_draw_card(wg_hid)
 				_log("格鲁特：%s 与 %s 各抽 1 张牌" % [DB.hero_name(hid), DB.hero_name(wg_hid)], Color(0.8, 0.9, 1))
+		# ---------------- 蜘蛛侠扩英雄效果 ----------------
+		"web_shoot":
+			# 蜘蛛侠·蛛网喷射：获得 2 个移动指示物
+			state["heroes"][hid]["tokens"]["move"] += 2
+			_log("%s 蛛网喷射：获得 2 个移动指示物" % DB.hero_name(hid), Color(0.8, 0.9, 1))
+		"super_strength":
+			# 蜘蛛侠·超凡力量：进行三次攻击，每击败一个暴徒获得 1 个英勇指示物
+			var ss_loc: int = state["heroes"][hid]["location"]
+			for si in range(3):
+				var thug_before: int = state["locations"][ss_loc]["thug"]
+				await _attack_once_at(hid, ss_loc, "超凡力量第 %d 次" % (si + 1))
+				var killed: int = thug_before - state["locations"][ss_loc]["thug"]
+				if killed > 0:
+					state["heroes"][hid]["tokens"]["heroic"] += killed
+					_log("超凡力量：击败 %d 个暴徒，获得 %d 个英勇指示物" % [killed, killed], Color(0.8, 1, 0.8))
+		"great_responsibility":
+			# 蜘蛛侠·重大责任：营救所在地点最多 3 个平民，每营救 1 个获得 1 个攻击指示物。
+			# 分次结算：每次营救单独弹窗确认；检查平民是否还有，且玩家选"否"即停止。
+			var gr_loc: int = state["heroes"][hid]["location"]
+			var gr_saved := 0
+			for gi in range(3):
+				if state["locations"][gr_loc]["civ"] <= 0:
+					break
+				var ok := await _ask_confirm("重大责任：营救 1 个平民？（剩余 %d，已救 %d）" % [state["locations"][gr_loc]["civ"], gr_saved])
+				if ok:
+					_rescue_civ(hid, gr_loc)
+					state["heroes"][hid]["tokens"]["attack"] += 1
+					gr_saved += 1
+				else:
+					break
+			_log("重大责任：营救 %d 个平民，获得 %d 个攻击指示物" % [gr_saved, gr_saved], Color(0.8, 1, 0.8))
+		"venom_strike":
+			# 迈尔斯·毒液突袭：对你所在地点的一个敌人造成两次攻击
+			var vs_loc: int = state["heroes"][hid]["location"]
+			await _attack_once_at(hid, vs_loc, "毒液突袭", 2)
+		"invisibility", "web_dancer":
+			# 迈尔斯·隐形 / 格温蛛·蛛网舞者：直到下回合开始无法受到伤害
+			state["heroes"][hid]["invulnerable"] = true
+			_log("%s：直到你下个回合开始不会受到伤害" % DB.hero_name(hid), Color(0.7, 0.9, 1))
+		"miles_web":
+			# 迈尔斯·蛛网：被动效果（打出即标记，英雄在反派所在地点结束回合时触发）
+			state["heroes"][hid]["miles_web_armed"] = true
+			_log("迈尔斯蛛网：已标记，若在反派所在地点结束回合则推迟反派下一个回合", Color(0.7, 0.9, 1))
+		"web_weaver":
+			# 格温蛛·蛛网交织者：选择两张威胁卡，交换它们的位置
+			var threat_locs: Array = []
+			for ti in range(LOCATION_COUNT):
+				if state["locations"][ti]["threat"] != null:
+					threat_locs.append(ti)
+			if threat_locs.size() < 2:
+				_log("蛛网交织者：场上威胁卡不足 2 张，无效", Color(0.8, 0.8, 0.8))
+			else:
+				var names_l: Array = []
+				for tl in threat_locs:
+					names_l.append("%s（%s）" % [_loc_name(tl), state["locations"][tl]["threat"]["name"]])
+				var p1: int = await _ask("蛛网交织者：选择第 1 张威胁卡", names_l)
+				var loc1: int = threat_locs[wrapi(int(p1), 0, threat_locs.size())]
+				var names_l2: Array = []
+				for tl in threat_locs:
+					if tl != loc1:
+						names_l2.append("%s（%s）" % [_loc_name(tl), state["locations"][tl]["threat"]["name"]])
+				var p2: int = await _ask("蛛网交织者：选择第 2 张威胁卡", names_l2)
+				var avail2: Array = threat_locs.filter(func(x): return x != loc1)
+				var loc2: int = avail2[wrapi(int(p2), 0, avail2.size())]
+				var t1: Variant = state["locations"][loc1]["threat"]
+				var t2: Variant = state["locations"][loc2]["threat"]
+				state["locations"][loc1]["threat"] = t2
+				state["locations"][loc2]["threat"] = t1
+				_log("蛛网交织者：交换了 %s 与 %s 的威胁卡" % [_loc_name(loc1), _loc_name(loc2)], Color(0.7, 0.9, 1))
+		"acrobatic_fight":
+			# 格温蛛·杂技格斗：击败所在地点所有的暴徒
+			var af_loc: int = state["heroes"][hid]["location"]
+			var af_count: int = state["locations"][af_loc]["thug"]
+			if af_count > 0:
+				_defeat_thug(af_loc, af_count, hid)
+				_log("杂技格斗：击败 %s 的所有 %d 个暴徒" % [_loc_name(af_loc), af_count], Color(0.8, 1, 0.8))
+		"cartoon_web":
+			# 蜘猪侠·卡通蛛网：被动效果（打出即标记，英雄在反派所在地点结束回合时触发）
+			state["heroes"][hid]["cartoon_web_armed"] = true
+			_log("卡通蛛网：已标记，若在反派所在地点结束回合则取消失下一次反派移动", Color(0.7, 0.9, 1))
+		"cartoon_essence":
+			# 蜘猪侠·卡通精髓：直到下回合开始，你的最后一张牌不能被弃置
+			state["heroes"][hid]["protect_last_card"] = true
+			_log("卡通精髓：直到你下回合开始，最后一张牌不能被弃置", Color(0.7, 0.9, 1))
+		"cartoon_weapon":
+			# 蜘猪侠·卡通武器：在任意地点进行一次攻击
+			var cw_names: Array = []
+			for ci in range(LOCATION_COUNT):
+				cw_names.append(_loc_name(ci))
+			var cw_p: int = await _ask("卡通武器：选择攻击地点", cw_names)
+			var cw_loc: int = wrapi(int(cw_p), 0, LOCATION_COUNT)
+			await _attack_once_at(hid, cw_loc, "卡通武器")
 	Events.emit_state_changed()
 	await _maybe_auto_end_turn()  # 效果用完后符号若已用尽则自动结束回合
 
@@ -2412,6 +2910,22 @@ func end_turn() -> void:
 	var h: Dictionary = state["heroes"][hid]
 	var loc: int = h["location"]
 	var l: Dictionary = state["locations"][loc]
+	# 蜘猪侠卡通蛛网（被动）：若该英雄在反派所在地点结束回合，则取消失下一次反派移动
+	if h.get("cartoon_web_armed", false):
+		if loc == state["villain_pos"]:
+			state["no_villain_move_next"] = true
+			_log("卡通蛛网：%s 在反派所在地点结束回合，取消失下一次反派移动" % DB.hero_name(hid), Color(1, 0.85, 0.4))
+		else:
+			_log("卡通蛛网：%s 未在反派所在地点结束回合，效果未触发" % DB.hero_name(hid), Color(0.9, 0.8, 0.6))
+		h["cartoon_web_armed"] = false
+	# 迈尔斯蛛网（被动）：若该英雄在反派所在地点结束回合，则推迟反派下一个回合
+	if h.get("miles_web_armed", false):
+		if loc == state["villain_pos"]:
+			state["delay_villain_turn"] = true
+			_log("迈尔斯蛛网：%s 在反派所在地点结束回合，推迟反派下一个回合" % DB.hero_name(hid), Color(0.7, 0.9, 1))
+		else:
+			_log("迈尔斯蛛网：%s 未在反派所在地点结束回合，效果未触发" % DB.hero_name(hid), Color(0.9, 0.8, 0.6))
+		h["miles_web_armed"] = false
 	if l["threat"] == null:
 		await _resolve_location_end_effect(hid, loc)
 	else:
@@ -2437,6 +2951,11 @@ func end_turn() -> void:
 		state["end_turn_busy"] = false
 		return
 	var needed := 2 if state["missions_completed"] >= 1 else 3
+	# 迈尔斯蛛网：反派回合被推迟一个英雄回合（把本次进入反派的所需英雄卡数 +1，真正延后一个英雄回合）
+	if state.get("delay_villain_turn", false):
+		state["delay_villain_turn"] = false
+		needed += 1
+		_log("蛛网：反派回合被推迟一个英雄回合", Color(0.7, 0.9, 1))
 	if state["hero_cards_played"] >= needed:
 		await _run_villain_turn()
 	else:
@@ -2754,6 +3273,94 @@ func _resolve_location_end_effect(hid: String, loc: int) -> void:
 				var pick8: int = await _ask("选择获得能量指示物的英雄", labels8)
 				state["heroes"][heroes_here[pick8]]["tokens"]["wild"] += 1
 				_log("%s 获得 1 个能量指示物（瓦坎达原野，暂作万能指示物）" % DB.hero_name(heroes_here[pick8]), Color(0.9, 0.9, 0.5))
+		"klin_discard_threat_token":
+			# 克林监狱：弃 1 张手牌到牌库底，然后在场上任意一张威胁卡上放置对应的行动指示物。
+			# 若场上没有可放置指示物的威胁卡，则不触发此效果。
+			var klin_opt: Array = []
+			for i2 in range(LOCATION_COUNT):
+				var lth2: Variant = state["locations"][i2]["threat"]
+				# 只收集"可放置指示物"的威胁卡（排除爪牙型 hp>0）
+				if lth2 != null and _threat_placeable_sym(lth2) != "":
+					klin_opt.append(i2)
+			if klin_opt.is_empty():
+				_log("克林监狱：场上没有可放置指示物的威胁卡，效果不触发", Color(0.8, 0.9, 0.9))
+			else:
+				var kh: Dictionary = state["heroes"][hid]
+				if kh["hand"].size() > 0 and await _ask_confirm("克林监狱：弃 1 张手牌到牌库底，并在场上任一威胁卡上放指示物？"):
+					var picked_k: Array = await _ask_hand_cards(hid, 1, "%s：选择放回牌库底的手牌" % DB.hero_name(hid))
+					if picked_k.size() > 0:
+						var cik: int = int(picked_k[0])
+						var cardk: int = kh["hand"][cik]
+						kh["hand"].remove_at(cik)
+						kh["deck"].append(cardk)
+					var names_th: Array = []
+					for i2 in klin_opt:
+						names_th.append("%s（%s）" % [_loc_name(i2), state["locations"][i2]["threat"]["name"]])
+					var pick_th: int = await _ask("克林监狱：选择放置指示物的威胁卡", names_th)
+					var t_loc: int = klin_opt[wrapi(int(pick_th), 0, klin_opt.size())]
+					var t_sym: String = _threat_placeable_sym(state["locations"][t_loc]["threat"])
+					if t_sym != "":
+						_place_threat_token(hid, t_loc, t_sym, "克林监狱")
+		"discard_token_choose2":
+			# 虚无之地：弃 1 个行动指示物，然后从移动/攻击/英勇指示物中选择两个（任意组合）
+			var tp2: Dictionary = state["shield_tokens"] if state["mode"] == "shield" else state["heroes"][hid]["tokens"]
+			if int(tp2["move"]) + int(tp2["attack"]) + int(tp2["heroic"]) + int(tp2["wild"]) > 0 and await _ask_confirm("虚无之地：弃 1 个行动指示物，选 2 个指示物？"):
+				var dnames: Array = ["移动", "攻击", "英勇", "万能"]
+				var dkeys2: Array = ["move", "attack", "heroic", "wild"]
+				var d_avail: Array = []
+				for ti in range(4):
+					if int(tp2[dkeys2[ti]]) > 0:
+						d_avail.append(ti)
+				var dlabels: Array = []
+				for a in d_avail:
+					dlabels.append(dnames[a])
+				var dc: int = await _ask("虚无之地：选择弃置的指示物", dlabels)
+				tp2[dkeys2[d_avail[int(dc)]]] -= 1
+				# 选 2 个（移动/攻击/英勇，可重复）
+				var chosen: Array = ["move", "attack", "heroic"]
+				for ci in range(2):
+					var cnames: Array = ["移动", "攻击", "英勇", "❌ 结束"]
+					var ckeys: Array = ["move", "attack", "heroic", "end"]
+					var cc: int = await _ask("虚无之地：选第 %d 个指示物" % (ci + 1), cnames)
+					if ckeys[wrapi(int(cc), 0, ckeys.size())] == "end":
+						break
+					var ck: String = ckeys[wrapi(int(cc), 0, ckeys.size())]
+					state["heroes"][hid]["tokens"][ck] += 1
+		"gain_move_1":
+			# 奥斯本大厦：获得 1 个移动指示物
+			state["heroes"][hid]["tokens"]["move"] += 1
+			_log("%s 获得 1 移动指示物（奥斯本大厦）" % DB.hero_name(hid), Color(0.9, 0.9, 0.5))
+		"gain_attack_1":
+			# 奥斯本实验室：获得 1 个攻击指示物
+			state["heroes"][hid]["tokens"]["attack"] += 1
+			_log("%s 获得 1 攻击指示物（奥斯本实验室）" % DB.hero_name(hid), Color(0.9, 0.9, 0.5))
+		"gain_heroic_1":
+			# 中城高中：获得 1 个英勇指示物
+			state["heroes"][hid]["tokens"]["heroic"] += 1
+			_log("%s 获得 1 英勇指示物（中城高中）" % DB.hero_name(hid), Color(0.9, 0.9, 0.5))
+		"add_civ_rescue":
+			# 布鲁克林大桥：在任意地点添加 1 个平民（包括该地点），然后在该地点营救 1 个平民
+			if await _ask_confirm("布鲁克林大桥：在任意地点添加 1 个平民，然后营救 1 个平民？"):
+				var ac_names: Array = []
+				for i2 in range(LOCATION_COUNT):
+					ac_names.append(_loc_name(i2))
+				var ac: int = await _ask("布鲁克林大桥：选择添加平民的地点", ac_names)
+				var ac_loc: int = wrapi(int(ac), 0, LOCATION_COUNT)
+				await _place_token_at("civ", ac_loc, 1)
+				_rescue_civ(hid, ac_loc)
+				_log("%s 在 %s 添加并营救 1 个平民（布鲁克林大桥）" % [DB.hero_name(hid), _loc_name(ac_loc)], Color(0.8, 0.9, 1))
+		"peek_villain_deck":
+			# 号角日报：查看反派行动牌库顶的牌，然后可放置到牌堆底
+			if state["master_deck"].size() > 0 and await _ask_confirm("号角日报：查看反派行动牌库顶的牌？"):
+				var top: Variant = state["master_deck"][0]
+				if top is Dictionary:
+					_log("号角日报：反派牌库顶是一张特殊牌（无限宝石）", Color(0.8, 0.9, 1))
+				else:
+					_log("号角日报：反派牌库顶是：%s" % villain_action_desc(int(top)), Color(0.8, 0.9, 1))
+					if await _ask_confirm("号角日报：将这张牌放置到牌堆底？"):
+						state["master_deck"].remove_at(0)
+						state["master_deck"].append(top)
+						_log("号角日报：顶牌放到了牌堆底", Color(0.8, 0.9, 1))
 
 ## 中央公园：分批次移动指示物（最多 2 批；每批：玩家选 1 个指示物（平民/暴徒任意组合）
 ## → 选 1 个任意有空位的地点），可提前结束

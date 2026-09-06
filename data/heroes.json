@@ -1257,6 +1257,7 @@
       },
       {
         "symbols": [
+          "wild",
           "wild"
         ]
       }
@@ -1468,6 +1469,198 @@
           "wild",
           "wild"
         ]
+      }
+    ]
+  },
+  "spiderman": {
+    "name": "蜘蛛侠",
+    "name_en": "Spider-Man",
+    "color": "#b8322a",
+    "back": "res://assets/cards/heroes/spiderman/back.png",
+    "expansion": "蜘蛛侠扩",
+    "cards": [
+      {
+        "symbols": ["move"],
+        "effect": {"type": "super_strength", "name": "超凡力量", "text": "进行三次攻击，此效果的攻击每击败一个暴徒，你获得一个英勇指示物。"}
+      },
+      {
+        "symbols": ["move"],
+        "effect": {"type": "great_responsibility", "name": "重大责任", "text": "在你所在地点营救最多三个平民，此效果每营救一个平民，你获得一个攻击指示物。"}
+      },
+      {
+        "symbols": ["move"],
+        "effect": {"type": "web_shoot", "name": "蛛网喷射", "text": "你获得两个移动指示物"}
+      },
+      {
+        "symbols": ["move"]
+      },
+      {
+        "symbols": ["move", "heroic"]
+      },
+      {
+        "symbols": ["move", "heroic"]
+      },
+      {
+        "symbols": ["move", "attack"]
+      },
+      {
+        "symbols": ["heroic", "heroic"]
+      },
+      {
+        "symbols": ["attack"]
+      },
+      {
+        "symbols": ["attack", "attack"]
+      },
+      {
+        "symbols": ["wild"]
+      },
+      {
+        "symbols": ["wild", "wild"]
+      }
+    ]
+  },
+  "miles": {
+    "name": "迈尔斯",
+    "name_en": "Miles Morales",
+    "color": "#1b1b2f",
+    "back": "res://assets/cards/heroes/miles/back.png",
+    "expansion": "蜘蛛侠扩",
+    "cards": [
+      {
+        "symbols": ["move"]
+      },
+      {
+        "symbols": ["move", "attack"]
+      },
+      {
+        "symbols": ["wild"],
+        "effect": {"type": "miles_web", "name": "蛛网", "text": "若你与反派在同一地点，将反派下一个回合推迟。"}
+      },
+      {
+        "symbols": ["attack"]
+      },
+      {
+        "symbols": ["attack", "attack"]
+      },
+      {
+        "symbols": ["attack"],
+        "effect": {"type": "venom_strike", "name": "毒液突袭", "text": "对你所在地点的一个敌人造成两次攻击。"}
+      },
+      {
+        "symbols": ["heroic", "attack"]
+      },
+      {
+        "symbols": ["heroic"]
+      },
+      {
+        "symbols": ["heroic", "heroic"]
+      },
+      {
+        "symbols": ["heroic"],
+        "effect": {"type": "invisibility", "name": "隐形", "text": "直到你下一个回合开始，你无法受到伤害。"}
+      },
+      {
+        "symbols": ["wild"]
+      },
+      {
+        "symbols": ["wild", "wild"]
+      }
+    ]
+  },
+  "gwenspider": {
+    "name": "格温蛛",
+    "name_en": "Ghost-Spider",
+    "color": "#c47ba8",
+    "back": "res://assets/cards/heroes/gwenspider/back.png",
+    "expansion": "蜘蛛侠扩",
+    "cards": [
+      {
+        "symbols": ["move"],
+        "effect": {"type": "web_dancer", "name": "蛛网舞者", "text": "直到你下回合开始，不会受到任何伤害。"}
+      },
+      {
+        "symbols": ["heroic"],
+        "effect": {"type": "web_weaver", "name": "蛛网交织者", "text": "选择场上两张威胁卡，交换它们的位置。"}
+      },
+      {
+        "symbols": ["attack"],
+        "effect": {"type": "acrobatic_fight", "name": "杂技格斗", "text": "击败你所在地点所有的暴徒。"}
+      },
+      {
+        "symbols": ["move"]
+      },
+      {
+        "symbols": ["move", "heroic"]
+      },
+      {
+        "symbols": ["move", "heroic"]
+      },
+      {
+        "symbols": ["heroic"]
+      },
+      {
+        "symbols": ["heroic", "heroic"]
+      },
+      {
+        "symbols": ["move", "attack"]
+      },
+      {
+        "symbols": ["attack"]
+      },
+      {
+        "symbols": ["wild"]
+      },
+      {
+        "symbols": ["wild", "wild"]
+      }
+    ]
+  },
+  "spiderpig": {
+    "name": "蜘猪侠",
+    "name_en": "Spider-Ham",
+    "color": "#c0504d",
+    "back": "res://assets/cards/heroes/spiderpig/back.png",
+    "expansion": "蜘蛛侠扩",
+    "cards": [
+      {
+        "symbols": ["move"]
+      },
+      {
+        "symbols": ["move", "attack"]
+      },
+      {
+        "symbols": ["move", "attack"]
+      },
+      {
+        "symbols": ["move"],
+        "effect": {"type": "cartoon_web", "name": "卡通蛛网", "text": "下一个反派行动时，反派不能移动。"}
+      },
+      {
+        "symbols": ["attack"]
+      },
+      {
+        "symbols": ["attack"]
+      },
+      {
+        "symbols": ["attack", "attack"]
+      },
+      {
+        "symbols": ["heroic"]
+      },
+      {
+        "symbols": ["heroic"],
+        "effect": {"type": "cartoon_essence", "name": "卡通精髓", "text": "直到你下回合开始，你的最后一张牌不能被弃置（无论什么效果）。"}
+      },
+      {
+        "symbols": ["wild"]
+      },
+      {
+        "symbols": ["wild", "wild"]
+      },
+      {
+        "symbols": ["attack"],
+        "effect": {"type": "cartoon_weapon", "name": "卡通武器", "text": "在任意地点进行一次攻击。"}
       }
     ]
   }

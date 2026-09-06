@@ -27,6 +27,8 @@ var _hp_label: Label
 var _hp_icon: TextureRect
 var _fear_bar: ProgressBar
 var _fear_label: Label
+var _ko_icon: TextureRect   # 罗南：KO 指示物图标（放在反派进度条旁）
+var _goblin_civ_box: HBoxContainer   # 绿魔：绑架到反派面板的平民指示物（按顺序显示）
 var _phase_label: Label
 var _turn_label: Label
 var _campaign_label: Label
@@ -99,9 +101,9 @@ func _ready() -> void:
 		"clear": load("res://assets/tokens/mission_clear.png"),
 	}
 	# 英雄/反派图标：使用卡牌背面图（英雄=英雄卡背，反派=反派行动牌背）
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot"]:
+	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]:
 		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]:
 		_villain_icons[vid] = load(DB.villain(vid)["back"])
 	_build_ui()
 	# 弹窗/提示信号 → 弹窗层模块（CanvasLayer=100，永不被主界面内容遮挡）
@@ -202,6 +204,22 @@ func _build_ui() -> void:
 	_fear_label = UiKit.label("", 16, Color(0.9, 0.6, 0.6))
 	_fear_label.position = Vector2(5, 238)
 	villain_bg.add_child(_fear_label)
+	# 绿魔：绑架到反派面板的平民指示物（按顺序显示在反派面板下方空白处）
+	_goblin_civ_box = HBoxContainer.new()
+	_goblin_civ_box.position = Vector2(5, 225)
+	_goblin_civ_box.add_theme_constant_override("separation", 4)
+	_goblin_civ_box.visible = false
+	villain_bg.add_child(_goblin_civ_box)
+	# 罗南 KO 指示物图标（放在进度条标签左侧；仅罗南显示）
+	_ko_icon = TextureRect.new()
+	_ko_icon.texture = load("res://assets/cards/villains/ronan/ko_token.png")
+	_ko_icon.custom_minimum_size = Vector2(20, 20)
+	_ko_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_ko_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_ko_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ko_icon.position = Vector2(360, 238)
+	_ko_icon.visible = false
+	villain_bg.add_child(_ko_icon)
 	# 灭霸：已阵亡英雄计数（生命值右侧，x/y，y=初始玩家数）+ 图标（下方，缩小到不超面板）
 	_eliminated_label = UiKit.label("已阵亡 0/0", 17, Color(1, 0.75, 0.4))
 	_eliminated_label.position = Vector2(250, 182)
@@ -519,6 +537,9 @@ func _show_location_info(i: int) -> void:
 		lines.append(t["text"])
 		if t["hp"] > 0:
 			lines.append("爪牙生命：%d" % t["hp"])
+		elif t.has("clear"):
+			var filled: Array = t.get("clear_progress", [])
+			lines.append("清除符号进度：%d / %d" % [filled.size(), t["clear"].size()])
 		elif t.get("heroic_tokens", 0) > 0:
 			lines.append("英勇指示物：%d / 3" % t["heroic_tokens"])
 		lines.append("（清除威胁后才能使用此地点效果）")
@@ -562,6 +583,7 @@ func _refresh_villain() -> void:
 		_fear_bar.value = st["fear"]
 		_fear_label.visible = true
 		_fear_label.text = "恐惧轨道：%d / %d" % [st["fear"], DB.villain(vid).get("fear_track_max", 20)]
+		_ko_icon.visible = false
 	elif track == "slaughter":
 		# 暗夜比邻星屠宰轨道：0 / 1-12，到达 12 英雄失败
 		_fear_bar.visible = true
@@ -569,9 +591,36 @@ func _refresh_villain() -> void:
 		_fear_bar.value = st.get("slaughter", 0)
 		_fear_label.visible = true
 		_fear_label.text = "屠宰轨道：%d / 12" % st.get("slaughter", 0)
+		_ko_icon.visible = false
+	elif track == "ko":
+		# 罗南 KO 指示物计数：累计 4 个英雄失败
+		_fear_bar.visible = true
+		_fear_bar.max_value = 4
+		_fear_bar.value = st.get("ko_tokens", 0)
+		_fear_label.visible = true
+		_fear_label.text = "KO 指示物：%d / 4" % st.get("ko_tokens", 0)
+		_ko_icon.visible = true
 	else:
 		_fear_bar.visible = false
 		_fear_label.visible = false
+		_ko_icon.visible = false
+	# 绿魔：绑架到反派面板的平民指示物（按顺序显示在反派面板下方空白处）
+	if vid == "goblin":
+		for c in _goblin_civ_box.get_children():
+			_goblin_civ_box.remove_child(c)
+			c.queue_free()
+		var civ_n: int = int(st.get("goblin_panel_civ", 0))
+		for k in range(civ_n):
+			var tr := TextureRect.new()
+			tr.texture = _icon_civ
+			tr.custom_minimum_size = Vector2(22, 22)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			_goblin_civ_box.add_child(tr)
+		_goblin_civ_box.visible = true
+	else:
+		_goblin_civ_box.visible = false
 	# 红骷髅：蓝色方块指示恐惧位置（面板三排轨道：0 / 1-10 / 11-20）
 	if vid == "redskull":
 		_fear_marker.visible = true
@@ -1470,15 +1519,14 @@ func _rebuild_icons(st: Dictionary) -> void:
 			if h["location"] != i:
 				continue
 			var badge := ""
-			if h["ko"]:
-				badge = "KO"
-			elif int(h["crisis"]) > 0:
+			if int(h["crisis"]) > 0:
 				badge = "⚠%d" % h["crisis"]
 			icons.append({
 				"tex": _hero_icons.get(hid),
 				"badge": badge,
-				"bc": Color(1, 0.4, 0.4) if h["ko"] else Color(1, 0.9, 0.3),
+				"bc": Color(1, 0.9, 0.3),
 				"ko": h["ko"],
+				"ko_count": int(h.get("ko_count", 0)),
 				"role": hid,
 			})
 		if icons.size() == 0:
@@ -1519,6 +1567,24 @@ func _rebuild_icons(st: Dictionary) -> void:
 			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
 			tr.modulate = Color(0.55, 0.55, 0.55) if ic.get("ko", false) else Color.WHITE
 			box.add_child(tr)
+			# 罗南 KO 指示物：只要该英雄累计过 KO 指示物（ko_count>0），就固定在英雄图标左下角显示
+			# KO 图标 + 数量（不限当前是否 KO；不与右下角危机徽章重叠）
+			if st.get("villain", "") == "ronan" and int(ic.get("ko_count", 0)) > 0:
+				var ko_icon := TextureRect.new()
+				ko_icon.texture = load("res://assets/cards/villains/ronan/ko_token.png")
+				ko_icon.custom_minimum_size = Vector2(20, 20)
+				ko_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				ko_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				ko_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				ko_icon.position = Vector2(0, icon_h - 22)
+				box.add_child(ko_icon)
+				var ko_num := UiKit.label("%d" % int(ic.get("ko_count", 0)), 12, Color(1, 0.4, 0.4))
+				ko_num.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+				ko_num.add_theme_constant_override("outline_size", 3)
+				ko_num.position = Vector2(18, icon_h - 20)
+				ko_num.custom_minimum_size = Vector2(18, 16)
+				ko_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+				box.add_child(ko_num)
 			if ic["badge"] != "":
 				var lb: Label = UiKit.label(ic["badge"], 14, ic["bc"])
 				lb.add_theme_color_override("font_outline_color", Color(0, 0, 0))

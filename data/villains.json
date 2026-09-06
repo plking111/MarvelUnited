@@ -2191,5 +2191,312 @@
         "constant": true
       }
     ]
+  },
+  "ronan": {
+    "name": "罗南",
+    "name_en": "Ronan",
+    "color": "#5a7a9a",
+    "image": "res://assets/cards/villains/ronan/panel.png",
+    "back": "res://assets/cards/villains/ronan/back.png",
+    "health": {
+      "2": 5,
+      "3": 9,
+      "4": 12
+    },
+    "bam": "罗南所在地点的 1 名英雄受到 1 点伤害（玩家选择）。",
+    "overflow": "无法放置平民/暴徒指示物时，每有 1 个溢出指示物，该地点的 1 名英雄受到 1 点伤害（玩家选择）。",
+    "plot": "当英雄们总计获得 4 个 KO 指示物时，英雄失败。",
+    "plot_track": "ko",
+    "fear_track_max": 0,
+    "special": "当有英雄被 KO 时，该英雄获得 1 个 KO 指示物。",
+    "threats": [
+      {
+        "name": "太空伏击",
+        "text": "在该地点的英雄开始回合时受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false,
+        "clear": ["move", "heroic", "attack"]
+      },
+      {
+        "name": "越狱",
+        "text": "该地点的英雄想要使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true,
+        "clear": ["move", "heroic", "attack"]
+      },
+      {
+        "name": "克里精英部队",
+        "text": "该地点的每个暴徒需要 2 次攻击才能消灭。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true,
+        "clear": ["attack", "attack", "attack"]
+      },
+      {
+        "name": "越狱",
+        "text": "该地点的英雄想要使用移动行动离开该地点时，必须消耗 2 个移动行动才能离开。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true,
+        "clear": ["move", "heroic", "attack"]
+      },
+      {
+        "name": "克里精英部队",
+        "text": "该地点的每个暴徒需要 2 次攻击才能消灭。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true,
+        "clear": ["attack", "attack", "attack"]
+      },
+      {
+        "name": "太空伏击",
+        "text": "在该地点的英雄开始回合时受到 1 点伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": true,
+        "constant": false,
+        "clear": ["move", "heroic", "attack"]
+      }
+    ],
+    "actions": [
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": {"dir": "cw", "hero_in": false},
+        "bam": false,
+        "effect": {"type": "ronan_kree", "name": "克里-法", "text": "在每个地点添加 1 个暴徒"},
+        "place": null
+      },
+      {
+        "move": {"dir": "ccw", "hero_in": false},
+        "bam": false,
+        "effect": {"type": "ronan_kree", "name": "克里-法", "text": "在每个地点添加 1 个暴徒"},
+        "place": null
+      },
+      {
+        "move": {"dir": "ccw", "hero_in": true},
+        "bam": false,
+        "effect": {"type": "ronan_universal", "name": "宇宙-鲁", "text": "对罗南所在地点的每个英雄造成 1 点伤害"},
+        "place": null
+      },
+      {
+        "move": {"dir": "cw", "hero_in": true},
+        "bam": false,
+        "effect": {"type": "ronan_universal", "name": "宇宙-鲁", "text": "对罗南所在地点的每个英雄造成 1 点伤害"},
+        "place": null
+      },
+      {
+        "move": {"dir": "cw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["thug"], ["thug", "thug"], ["thug"]]
+      },
+      {
+        "move": {"dir": "ccw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["thug"], ["thug", "thug"], ["thug"]]
+      },
+      {
+        "move": {"dir": "ccw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["thug"], ["thug", "thug"], ["thug"]]
+      },
+      {
+        "move": {"dir": "cw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": {"dir": "cw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": {"dir": "ccw", "hero_in": true},
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": 0,
+        "bam": false,
+        "effect": null,
+        "place": [["civ", "thug"], ["civ", "civ"], ["civ", "thug"]]
+      }
+    ]
+  },
+  "goblin": {
+    "name": "绿魔",
+    "name_en": "Green Goblin",
+    "color": "#5a7a2a",
+    "image": "res://assets/cards/villains/goblin/panel.png",
+    "back": "res://assets/cards/villains/goblin/back.png",
+    "health": {
+      "2": 5,
+      "3": 7,
+      "4": 10
+    },
+    "bam": "对绿魔所在地点的每个英雄造成 1 点伤害，然后抽取一张威胁卡放置在顺时针下一个没有威胁卡的地点（从绿魔所在地点开始计算）。",
+    "overflow": "若平民/暴徒指示物无法添加到地点，则抽取一张威胁卡放置在顺时针下一个没有威胁卡的地点（从触发溢出的地点开始计算）。",
+    "plot": "当所有地点都有威胁卡时，英雄失败。",
+    "plot_track": "none",
+    "fear_track_max": 0,
+    "special": "特殊设置：游戏开始时绿魔不放置威胁卡/威胁指示物，其威胁卡是单独牌堆背面朝上放一旁。当威胁卡被清理时，将该威胁卡混洗并放回牌堆，再从供应堆拿取一个威胁指示物放在任务牌上。绿魔面板有平民指示物时不能受到伤害；英雄可在绿魔所在地点使用两次英勇行动营救 1 个绿魔面板上的平民指示物。",
+    "threats": [
+      {
+        "name": "电光人",
+        "text": "BAM!：对相邻地点的每位英雄造成 1 点伤害（不包括电光人所在地点）。",
+        "henchman_hp": 4,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "企业爪牙",
+        "text": "放置此威胁时，在此地点添加 1 个暴徒。该地点每个暴徒需要 2 点伤害才能击败。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false,
+        "clear": ["heroic", "heroic", "heroic"],
+        "place_thug_on_setup": true
+      },
+      {
+        "name": "以平民为盾",
+        "text": "只要该地点有平民指示物，绿魔便不能受到任何伤害。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": true,
+        "clear": ["heroic", "heroic", "heroic"]
+      },
+      {
+        "name": "企业爪牙",
+        "text": "放置此威胁时，在此地点添加 1 个暴徒。该地点每个暴徒需要 2 点伤害才能击败。",
+        "henchman_hp": 0,
+        "bam": false,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false,
+        "clear": ["heroic", "heroic", "heroic"],
+        "place_thug_on_setup": true
+      },
+      {
+        "name": "猎人克莱文",
+        "text": "BAM!：将此威胁卡移动到顺时针下一个有英雄、且无威胁卡的地点（尽可能执行），对该地点的每位英雄造成 1 点伤害。",
+        "henchman_hp": 4,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      },
+      {
+        "name": "蜥蜴人",
+        "text": "BAM!：该地点所有英雄合计承受 2 点伤害，由英雄自行分配分摊。",
+        "henchman_hp": 5,
+        "bam": true,
+        "arrival": false,
+        "start_turn": false,
+        "constant": false
+      }
+    ],
+    "actions": [
+      {
+        "move": 0,
+        "bam": true,
+        "effect": null,
+        "place": null
+      },
+      {
+        "move": 5,
+        "bam": true,
+        "effect": null,
+        "place": [["civ", "thug"], ["civ", "civ"], ["civ", "thug"]]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [["thug", "thug"], ["thug"], ["thug"]]
+      },
+      {
+        "move": 4,
+        "bam": true,
+        "effect": null,
+        "place": [["thug", "thug"], ["thug", "thug"], ["thug", "thug"]]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [["thug"], ["thug", "thug"], ["thug"]]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": null,
+        "place": [["civ"], ["civ", "civ"], ["civ"]]
+      },
+      {
+        "move": 2,
+        "bam": true,
+        "effect": {"type": "goblin_kidnap", "name": "绑架", "text": "如果绿魔所在地点有平民指示物，则将一个平民指示物移动到绿魔反派面板区域。"},
+        "place": null
+      },
+      {
+        "move": 1,
+        "bam": true,
+        "effect": {"type": "goblin_kidnap", "name": "绑架", "text": "如果绿魔所在地点有平民指示物，则将一个平民指示物移动到绿魔反派面板区域。"},
+        "place": null
+      },
+      {
+        "move": 0,
+        "bam": true,
+        "effect": {"type": "goblin_scoundrel", "name": "无赖", "text": "只要此行动在故事情节中正面朝上，绿魔就获得 1 点额外生命值（只获得一次，可超过上限），并且其 BAM! 额外造成 1 点伤害。"},
+        "place": null
+      },
+      {
+        "move": 3,
+        "bam": true,
+        "effect": {"type": "goblin_scoundrel", "name": "无赖", "text": "只要此行动在故事情节中正面朝上，绿魔就获得 1 点额外生命值（只获得一次，可超过上限），并且其 BAM! 额外造成 1 点伤害。"},
+        "place": null
+      }
+    ]
   }
 }

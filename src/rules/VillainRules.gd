@@ -8,7 +8,7 @@ class_name VillainRules
 ##  - 各反派方法互相独立，绝不跨角色复用彼此代码；相同逻辑各自实现。
 
 # 反派 ID 列表（用于校验/迭代）
-const IDS := ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki"]
+const IDS := ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]
 
 
 ## BAM 特效入口：Game 翻出 BAM 时调用，按反派分发。
@@ -34,6 +34,10 @@ static func on_bam(game: Node, villain_id: String) -> void:
 			await _kilmonger_bam(game)
 		"loki":
 			await _loki_bam(game)
+		"ronan":
+			await _ronan_bam(game)
+		"goblin":
+			await _goblin_bam(game)
 		_:
 			pass
 
@@ -59,6 +63,10 @@ static func on_overflow(game: Node, villain_id: String, kind: String, loc: int) 
 			await _kilmonger_overflow(game, loc)
 		"loki":
 			await _loki_overflow(game)
+		"ronan":
+			await _ronan_overflow(game, kind, loc)
+		"goblin":
+			await _goblin_overflow(game, loc)
 		_:
 			pass
 
@@ -242,6 +250,14 @@ static func resolve_effect(game: Node, eff: Dictionary) -> void:
 			await _loki_witchcraft(game)
 		"loki_discord":
 			await _loki_discord(game)
+		"ronan_kree":
+			await _ronan_kree(game)
+		"ronan_universal":
+			await _ronan_universal(game)
+		"goblin_kidnap":
+			await _goblin_kidnap(game)
+		"goblin_scoundrel":
+			_goblin_scoundrel(game)
 		_:
 			pass
 
@@ -590,4 +606,81 @@ static func _loki_stash_villain_card(game: Node) -> void:
 		return
 	var d: Variant = game.state["master_deck"].pop_front()
 	game.state["story"].append({"type": "villain", "villain": game.state["villain"], "idx": d if d is int else -1, "move": 0, "face_down": true})
+
+# ---------------------------------------------------------------- 罗南 (Ronan)
+
+## BAM：罗南所在地点的 1 名英雄受到 1 点伤害（玩家选择）。
+static func _ronan_bam(game: Node) -> void:
+	var vpos := _vpos(game)
+	var heroes_here: Array = _heroes_at(game, vpos).filter(func(h): return not game.state["heroes"][h]["ko"])
+	if heroes_here.size() == 0:
+		game._log("BAM：罗南所在地点没有英雄可伤害", Color(0.8, 0.8, 0.8))
+		return
+	var labels: Array = []
+	for hid in heroes_here:
+		labels.append(DB.hero_name(hid))
+	var picked_idx: int = await game._ask("罗南 BAM！选择 1 名英雄受到 1 点伤害", labels)
+	var hid: String = heroes_here[picked_idx]
+	await game._deal_damage_to_hero(hid, 1)
+	game._log("罗南：%s 受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.6, 0.4))
+
+## 溢出：每有 1 个无法放置的平民/暴徒指示物，该地点 1 名英雄受到 1 点伤害（玩家选择）。
+static func _ronan_overflow(game: Node, kind: String, loc: int) -> void:
+	var heroes_here: Array = _heroes_at(game, loc).filter(func(h): return not game.state["heroes"][h]["ko"])
+	if heroes_here.size() == 0:
+		game._log("溢出！%s 没有英雄可伤害" % game._loc_name(loc), Color(0.8, 0.8, 0.8))
+		return
+	var labels: Array = []
+	for hid in heroes_here:
+		labels.append(DB.hero_name(hid))
+	var picked_idx: int = await game._ask("溢出！%s 放不下（%s），选择 1 名英雄受到 1 点伤害" % [game._loc_name(loc), "暴徒" if kind == "thug" else "平民"], labels)
+	var hid: String = heroes_here[picked_idx]
+	await game._deal_damage_to_hero(hid, 1)
+	game._log("溢出：%s 受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.6, 0.4))
+
+## 克里-法：在每个地点添加 1 个暴徒。
+static func _ronan_kree(game: Node) -> void:
+	for i in range(int(game.LOCATION_COUNT)):
+		await game._place_token_at("thug", i, 1)
+	game._log("克里-法：每个地点添加 1 个暴徒", Color(0.9, 0.7, 1))
+
+## 宇宙-鲁：对罗南所在地点的每个英雄造成 1 点伤害。
+static func _ronan_universal(game: Node) -> void:
+	var vpos := _vpos(game)
+	for hid in _heroes_at(game, vpos):
+		await game._deal_damage_to_hero(hid, 1)
+	game._log("宇宙-鲁：%s 的每个英雄受到 1 点伤害" % game._loc_name(vpos), Color(1, 0.6, 0.4))
+
+# ---------------------------------------------------------------- 绿魔 (Green Goblin)
+
+## BAM：对绿魔所在地点的每个英雄造成 1 点伤害，然后抽取一张威胁卡放置在顺时针下一个没有威胁卡的地点。
+static func _goblin_bam(game: Node) -> void:
+	var vpos := _vpos(game)
+	for hid in _heroes_at(game, vpos):
+		await game._deal_damage_to_hero(hid, 1)
+	game._log("绿魔 BAM！，抽取威胁卡放置到下一个无威胁卡地点", Color(1, 0.7, 0.3))
+	game._goblin_place_threat_from_deck(vpos)
+
+## 溢出：若平民/暴徒无法添加，则抽取一张威胁卡放置在顺时针下一个没有威胁卡的地点（从溢出地点开始）。
+static func _goblin_overflow(game: Node, loc: int) -> void:
+	game._log("溢出！绿魔抽取威胁卡放置到下一个无威胁卡地点", Color(1, 0.7, 0.3))
+	game._goblin_place_threat_from_deck(loc)
+
+## 绑架：如果绿魔所在地点有平民指示物，则将一个平民指示物移动到绿魔反派面板区域。
+static func _goblin_kidnap(game: Node) -> void:
+	var vpos := _vpos(game)
+	if game.state["locations"][vpos]["civ"] > 0:
+		game.state["locations"][vpos]["civ"] -= 1
+		game.state["goblin_panel_civ"] = int(game.state.get("goblin_panel_civ", 0)) + 1
+		game._log("绑架：%s 的 1 个平民被移到绿魔面板（面板平民 %d）" % [game._loc_name(vpos), game.state["goblin_panel_civ"]], Color(1, 0.6, 0.4))
+	else:
+		game._log("绑架：绿魔所在地点没有平民可绑架", Color(0.8, 0.8, 0.8))
+
+## 无赖：只要此行动正面朝上在故事情节中，绿魔获得 1 点额外生命值（只一次，可超上限），且 BAM! 额外造成 1 点伤害。
+static func _goblin_scoundrel(game: Node) -> void:
+	if not game.state.get("goblin_scoundrel_bonus", false):
+		game.state["goblin_scoundrel_bonus"] = true
+		game.state["villain_hp"] = int(game.state["villain_hp"]) + 1   # 可超过上限
+		game._log("无赖！绿魔获得 1 点额外生命值（当前 %d）" % game.state["villain_hp"], Color(1, 0.7, 0.3))
+	game.state["goblin_scoundrel_active"] = true
 

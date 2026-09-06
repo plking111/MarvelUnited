@@ -509,6 +509,102 @@
         "type": "valhalla_redraw",
         "text": "回合结束：你可以将任意张手牌放置在牌库底，然后抽取等量的手牌（弃置所有手牌不会导致 KO）。"
       }
+    },
+    "kyln": {
+      "expansion": "银河护卫队",
+      "name": "克林监狱",
+      "slots": 4,
+      "initial": ["civ", "thug", null, null],
+      "image": "res://assets/cards/locations/kyln.png",
+      "end_turn": {"type": "klin_discard_threat_token", "text": "回合结束：你可以将一张牌放到牌库底，然后在场上任意一张威胁卡上放置对应的行动指示物。"}
+    },
+    "milano": {
+      "expansion": "银河护卫队",
+      "name": "米兰诺号",
+      "slots": 2,
+      "initial": [null, null],
+      "image": "res://assets/cards/locations/milano.png",
+      "end_turn": {"type": "move_anywhere", "text": "回合结束：你可以移动到任意一个地点。"}
+    },
+    "morag": {
+      "expansion": "银河护卫队",
+      "name": "摩拉格星",
+      "slots": 5,
+      "initial": ["civ", "thug", null, null, null],
+      "image": "res://assets/cards/locations/morag.png",
+      "end_turn": {"type": "gain_wild_1", "text": "回合结束：你可以获得一个万能指示物。"}
+    },
+    "xandar": {
+      "expansion": "银河护卫队",
+      "name": "山达尔星",
+      "slots": 4,
+      "initial": ["civ", "civ", null, null],
+      "image": "res://assets/cards/locations/xandar.png",
+      "end_turn": {"type": "draw_to_3", "text": "回合结束：你可以抽牌直到 3 张牌。"}
+    },
+    "collector_museum": {
+      "expansion": "银河护卫队",
+      "name": "收藏家博物馆",
+      "slots": 3,
+      "initial": ["thug", null, null],
+      "image": "res://assets/cards/locations/collector_museum.png",
+      "end_turn": {"type": "discard_token_draw", "text": "回合结束：你可以弃置 1 个行动指示物然后抽取一张牌。"}
+    },
+    "nowhere": {
+      "expansion": "银河护卫队",
+      "name": "虚无之地",
+      "slots": 5,
+      "initial": ["civ", "thug", "thug", null, null],
+      "image": "res://assets/cards/locations/nowhere.png",
+      "end_turn": {"type": "discard_token_choose2", "text": "回合结束：你可以弃置 1 个行动指示物，然后从移动/攻击/英勇指示物中选择两个（任意组合）。"}
+    },
+    "oscorp_tower": {
+      "expansion": "蜘蛛侠扩",
+      "name": "奥斯本大厦",
+      "slots": 4,
+      "initial": ["civ", "thug", null, null],
+      "image": "res://assets/cards/locations/oscorp_tower.png",
+      "end_turn": {"type": "gain_move_1", "text": "回合结束：你可以获得一个移动指示物。"}
+    },
+    "oscorp_lab": {
+      "expansion": "蜘蛛侠扩",
+      "name": "奥斯本实验室",
+      "slots": 3,
+      "initial": ["thug", null, null],
+      "image": "res://assets/cards/locations/oscorp_lab.png",
+      "end_turn": {"type": "gain_attack_1", "text": "回合结束：你可以获得一个攻击指示物。"}
+    },
+    "brooklyn_bridge": {
+      "expansion": "蜘蛛侠扩",
+      "name": "布鲁克林大桥",
+      "slots": 4,
+      "initial": ["civ", "thug", null, null],
+      "image": "res://assets/cards/locations/brooklyn_bridge.png",
+      "end_turn": {"type": "add_civ_rescue", "text": "回合结束：你可以在任意地点添加一个平民指示物（包括该地点），然后在该地点营救一个平民。"}
+    },
+    "daily_bugle": {
+      "expansion": "蜘蛛侠扩",
+      "name": "号角日报",
+      "slots": 4,
+      "initial": ["civ", "civ", null, null],
+      "image": "res://assets/cards/locations/daily_bugle.png",
+      "end_turn": {"type": "peek_villain_deck", "text": "回合结束：查看反派行动牌库顶的牌，然后你可以将其放置到牌堆底（可以不放置）。"}
+    },
+    "queens": {
+      "expansion": "蜘蛛侠扩",
+      "name": "皇后区",
+      "slots": 5,
+      "initial": ["civ", "civ", null, null, null],
+      "image": "res://assets/cards/locations/queens.png",
+      "end_turn": {"type": "draw_if_hand_le2", "text": "回合结束：如果你只有 1/2 张手牌，你可以抽取一张牌。"}
+    },
+    "midtown_high": {
+      "expansion": "蜘蛛侠扩",
+      "name": "中城高中",
+      "slots": 4,
+      "initial": ["civ", "thug", null, null],
+      "image": "res://assets/cards/locations/midtown_high.png",
+      "end_turn": {"type": "gain_heroic_1", "text": "回合结束：你可以获得一个英勇指示物。"}
     }
   }
 }
