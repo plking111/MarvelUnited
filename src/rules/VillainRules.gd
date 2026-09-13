@@ -1686,9 +1686,6 @@ static func _modok_threat_bam(game: Node, tname: String, loc: int) -> void:
 		_:
 			pass
 
-	# 用户裁定：威胁卡的 BAM！也要触发「意识转移」（面板 BAM 那一份在 _modok_bam 里处理）。
-	# 统一走同一个结算点（叠加口径、日志、状态刷新都只有一处实现，避免两条分支各自漂移）。
-	if game.state["phase"] != "game_over":
 	Events.emit_state_changed()
 
 
