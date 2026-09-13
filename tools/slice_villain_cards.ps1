@@ -21,6 +21,7 @@ $maps = @{
   'zemo' = @{ folder = '7.2泽莫男爵'; id = 'zemo' }
   'modok' = @{ folder = '7.3摩多克'; id = 'modok' }
   'kang' = @{ folder = '7.4康'; id = 'kang' }
+  'rhino' = @{ folder = '7.5犀牛人'; id = 'rhino' }
 }
 
 $cfg = $maps[$Villain]

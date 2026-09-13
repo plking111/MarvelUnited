@@ -8,7 +8,7 @@ class_name VillainRules
 ##  - 各反派方法互相独立，绝不跨角色复用彼此代码；相同逻辑各自实现。
 
 # 反派 ID 列表（用于校验/迭代）
-const IDS := ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
+const IDS := ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang", "rhino"]
 
 
 ## BAM 特效入口：Game 翻出 BAM 时调用，按反派分发。
@@ -56,6 +56,10 @@ static func on_bam(game: Node, villain_id: String) -> void:
 			await _zemo_bam(game)
 		"modok":
 			await _modok_bam(game)
+		"kang":
+			await _kang_bam(game)
+		"rhino":
+			await _rhino_bam(game)
 		_:
 			pass
 
@@ -108,6 +112,12 @@ static func on_overflow(game: Node, villain_id: String, kind: String, loc: int, 
 		"modok":
 			# 面板为"1 个或多个…"→ 一次结算事件只翻转 1 张英雄卡（忽略 count）
 			await _modok_overflow(game, loc)
+		"kang":
+			# 面板为"1 个或多个…"→ 一次结算事件只在该地点加 1 个危机指示物（忽略 count）
+			await _kang_overflow(game, loc)
+		"rhino":
+			# 面板为"1 个或多个…"→ 一次结算事件只抽 1 张反派行动卡面朝下入故事（忽略 count）
+			await _rhino_overflow(game, loc)
 		_:
 			pass
 
@@ -340,6 +350,8 @@ static func resolve_effect(game: Node, eff: Dictionary) -> void:
 			_modok_mind_transfer(game)
 		"modok_superior_intellect":
 			_modok_superior_intellect(game)
+		"kang_time_master":
+			await _kang_time_master(game)
 		_:
 			pass
 
@@ -1518,20 +1530,36 @@ static func _modok_recent_icon_count(game: Node, sym: String, n: int) -> int:
 	return total
 
 
+## 行动卡 10/11「意识转移」的结算点（**用户裁定：反派面板 BAM 与威胁卡 BAM 都要触发**）。
+## 口径：故事情节里有 k 张正面朝上的「意识转移」就翻转 k 张英雄卡（每张各说"翻转 1 张"→ 叠加）。
+## why = 触发来源（"摩多克 BAM" / "威胁卡 BAM（卡名）"），只用于日志区分。
+## 调用点固定在"一次 BAM 已经落地"的地方：
+##   · 面板 BAM → _modok_bam 末尾；
+##   · 每张威胁卡的 BAM 各算一次 BAM 事件 → _modok_threat_bam 末尾（该函数每张带 BAM 的威胁卡只被
+##     Game._trigger_all_threat_bam 调一次，靠 _bam_done 守卫，所以不会对同一次 BAM 重复触发）。
+## "BAM 被取消"的口径与面板一致：移情操控（cancel_bam_pending）在主循环里直接跳过
+## _trigger_panel_bam 与 _trigger_all_threat_bam 两者，因此这里也不会被调用。
+static func _modok_mind_transfer_after_bam(game: Node, why: String) -> void:
+	if game.state["phase"] == "game_over":
+		return
+	var extra: int = _modok_faceup_effect_count(game, "modok_mind_transfer")
+	if extra <= 0:
+		return
+	game._log("意识转移（%s 之后）：故事情节中有 %d 张「意识转移」正面朝上，再翻转 %d 张英雄卡"
+		% [why, extra, extra], Color(1, 0.7, 0.9))
+	_modok_flip_hero_cards(game, extra, "意识转移")
+
+
 ## BAM！：翻转 1 张英雄卡。
-## 追加（行动卡 10/11「意识转移」）：只要它在故事情节中正面朝上，反派 BAM！之后再翻转 1 张英雄卡。
-## 口径：故事情节里有 k 张正面朝上的「意识转移」就多翻转 k 张（每张各说"翻转一张"）。
+## 追加（行动卡 10/11「意识转移」）：只要它在故事情节中正面朝上，BAM！之后再翻转 1 张英雄卡
+## （面板 BAM 与威胁卡 BAM 都会触发，见 _modok_mind_transfer_after_bam）。
 static func _modok_bam(game: Node) -> void:
 	var vpos: int = _vpos(game)
 	game._log("摩多克 BAM：翻转 1 张英雄卡（%s）" % game._loc_name(vpos), Color(1, 0.6, 0.4))
 	_modok_flip_hero_cards(game, 1, "摩多克 BAM")
 	if game.state["phase"] == "game_over":
 		return
-	var extra: int = _modok_faceup_effect_count(game, "modok_mind_transfer")
-	if extra > 0:
-		game._log("意识转移：故事情节中有 %d 张「意识转移」正面朝上，BAM！之后再翻转 %d 张英雄卡"
-			% [extra, extra], Color(1, 0.7, 0.9))
-		_modok_flip_hero_cards(game, extra, "意识转移")
+	_modok_mind_transfer_after_bam(game, "摩多克面板 BAM")
 	Events.emit_state_changed()
 
 
@@ -1645,4 +1673,310 @@ static func _modok_threat_bam(game: Node, tname: String, loc: int) -> void:
 				_modok_flip_hero_cards(game, cnt, "斑点")
 		_:
 			pass
+
+	# 用户裁定：威胁卡的 BAM！也要触发「意识转移」（面板 BAM 那一份在 _modok_bam 里处理）。
+	# 统一走同一个结算点（叠加口径、日志、状态刷新都只有一处实现，避免两条分支各自漂移）。
+	if game.state["phase"] != "game_over":
+		_modok_mind_transfer_after_bam(game, "威胁卡 BAM（%s）" % tname)
+	Events.emit_state_changed()
+
+
+# ---------------------------------------------------------------- 康 (Kang，第一季众筹)
+#
+# 卡面/面板口径（12 张行动卡 + 6 张威胁卡 + 面板全部逐张读图核对，见 反派_康_交接.md）：
+#   面板 生命值 2/3/4 人 = 4/7/10；
+#   面板 特别规则：当英雄被 KO 时，康不会激活他的 BAM！改为他打出另一张反派行动牌
+#                  （实现在 Game._ko_hero，与黑矮星/克莱文/沙人同一分支）；
+#   面板 BAM!：康在一个地点 → 对康所在位置的每个英雄 2 点伤害、对**其他位置**的每个英雄 1 点伤害；
+#             康不在场上 → 在每个位置添加 1 个暴徒，且不结算本张行动卡所示的添加平民/暴徒；
+#   面板 溢出效果：无法添加平民/暴徒 → 在该地点添加 1 个危机指示物，该地点失去回合结束效果；
+#   行动卡 1~6「时间大师」（6 张卡面完全相同，都是万能符号卡、卡面没有数字移动也没有 BAM! 星爆）：
+#             康在场上 → 把他移出游戏；康不在场上 → 放在英雄最多的地点上场（平手玩家选择）然后 BAM！
+#   威胁卡 时间藏匿处 / 时间悖论 / 时间军队 各 2 张（都是"只要…"被动 → constant = true）。
+
+## 康是否"不在场上"（被「时间大师」移出游戏）。
+## 这是康独有的状态：不在场上时他没有地点（villain_pos = -1），因此不能被攻击、
+## 不会被行动卡移动、不触发威胁"到达效果"，行动卡所示的放置图案也整张不结算。
+static func kang_off_field(game: Node) -> bool:
+	return bool(game.state.get("villain_off_field", false))
+
+
+## 面板 BAM 文字的括号口径：康不在场上时"不要添加这张反派行动卡上指示的所有需要添加的平民/暴徒"
+## → 本张行动卡的放置图案整张不结算（Game._do_placement 开头调用）。
+static func kang_skip_placement(game: Node) -> bool:
+	return String(game.state.get("villain", "")) == "kang" and kang_off_field(game)
+
+
+## 场上生效中的某张威胁卡数量（康的 3 种威胁卡各 2 张，按卡名统计）。
+static func _kang_threat_count(game: Node, tname: String) -> int:
+	var n := 0
+	for i in range(int(game.LOCATION_COUNT)):
+		var lt: Variant = game.state["locations"][i]["threat"]
+		if lt != null and String((lt as Dictionary).get("name", "")) == tname:
+			n += 1
+	return n
+
+
+## 「时间藏匿处」：只要康在该威胁卡所在地点**或与其相邻**，康就不受任何伤害（攻击判定用）。
+static func _kang_hideout_protects(game: Node) -> bool:
+	if kang_off_field(game):
+		return false
+	var vpos: int = _vpos(game)
+	if vpos < 0:
+		return false
+	for i in range(int(game.LOCATION_COUNT)):
+		var lt: Variant = game.state["locations"][i]["threat"]
+		if lt == null or String((lt as Dictionary).get("name", "")) != "时间藏匿处":
+			continue
+		if i == vpos or game._adjacent_locs(i).has(vpos):
+			return true
+	return false
+
+
+## 面板 BAM！：
+##   ① 康在一个地点 → 对该地点的每个英雄 2 点伤害，然后对其他位置的每个英雄 1 点伤害
+##      （⚠️ 面板原文是"对其他位置的每个英雄"= 全部其它地点；docx 写的是"相邻两个地点"，以面板为准）；
+##   ② 康不在场上 → 在每个位置添加 1 个暴徒（本张行动卡的放置图案由 Game._do_placement 跳过）。
+static func _kang_bam(game: Node) -> void:
+	if kang_off_field(game):
+		game._log("康不在场上：BAM！改为在每个位置添加 1 个暴徒", Color(1, 0.7, 0.4))
+		for i in game._live_locs():
+			if game.state["phase"] == "game_over":
+				return
+			await game._place_token_at("thug", int(i), 1)
+		Events.emit_state_changed()
+		return
+	var vpos: int = _vpos(game)
+	# ① 康所在位置：每个英雄 2 点伤害
+	for hid in _heroes_at(game, vpos):
+		if game.state["phase"] == "game_over":
+			return
+		await game._deal_damage_to_hero(String(hid), 2)
+	if game.state["phase"] == "game_over":
+		return
+	# ② 其他位置：每个英雄 1 点伤害
+	for i in range(int(game.LOCATION_COUNT)):
+		if i == vpos or bool(game.state["locations"][i].get("destroyed", false)):
+			continue
+		for hid in _heroes_at(game, i):
+			if game.state["phase"] == "game_over":
+				return
+			await game._deal_damage_to_hero(String(hid), 1)
+	Events.emit_state_changed()
+
+
+## 溢出：无法添加平民/暴徒 → 在该地点添加 1 个危机指示物。
+## 面板写"1 个或多个…"→ 一次结算事件只结算一次，与 count 无关（与泽莫/摩多克同口径）。
+## 「拥有危机指示物的地点将失去其回合结束效果」在 Game.end_turn 里结算（与电光人同一处判定）。
+static func _kang_overflow(game: Node, loc: int) -> void:
+	var l: Dictionary = game.state["locations"][loc]
+	l["crisis"] = int(l["crisis"]) + 1
+	game._log("溢出！%s 放不下指示物，在该地点添加 1 个危机指示物（共 %d 个）"
+		% [game._loc_name(loc), int(l["crisis"])], Color(0.8, 0.6, 1))
+	Events.emit_state_changed()
+
+
+## 该地点"未 KO 的英雄"数量（KO 的英雄要下回合才开始复活，不计入"英雄最多"）。
+static func _kang_hero_count_at(game: Node, loc: int) -> int:
+	var c := 0
+	for hid in _heroes_at(game, loc):
+		if not bool(game.state["heroes"][String(hid)]["ko"]):
+			c += 1
+	return c
+
+
+## 「时间大师」的上场落点：英雄最多的地点。
+## 并列（包含"场上一个未 KO 的英雄都没有"）→ 由玩家在并列的地点中选择。返回 -1 = 没有可上场的地点。
+static func _kang_entry_loc(game: Node) -> int:
+	var live: Array = game._live_locs()
+	if live.size() == 0:
+		return -1
+	var best := 0
+	for i in live:
+		best = maxi(best, _kang_hero_count_at(game, int(i)))
+	var cands: Array = []
+	for i in live:
+		if _kang_hero_count_at(game, int(i)) == best:
+			cands.append(int(i))
+	if cands.size() == 1:
+		return int(cands[0])
+	var rows: Array = []
+	for i in cands:
+		var ld: Dictionary = DB.location(game.state["locations"][int(i)]["id"])
+		rows.append({"icon": "move", "arrow": "move",
+			"text": "%s（英雄 %d 名）" % [game._loc_name(int(i)), _kang_hero_count_at(game, int(i))],
+			"bottom": String(ld.get("image", ""))})
+	var pick: int = int(await game._ask_action("时间大师：康在哪个地点上场？（英雄数量相同，由你选择）", rows))
+	return int(cands[wrapi(pick, 0, cands.size())])
+
+
+## 行动卡 1~6「时间大师」（万能符号卡：卡面没有数字移动、没有 BAM! 星爆，规则的 BAM! 写在效果文字里）：
+##   ① 康在一个地点 → 将他移出游戏（villain_pos = -1，康不在场上）
+##   ② 康不在场上 → 把他放在英雄最多的地点上场（平手玩家选择），然后 BAM！
+static func _kang_time_master(game: Node) -> void:
+	if not kang_off_field(game):
+		game.state["villain_off_field"] = true
+		game.state["villain_pos"] = -1
+		game._log("时间大师：康在一个地点 → 将他移出游戏（康不再在场上）", Color(0.8, 0.6, 1))
+		Events.emit_state_changed()
+		return
+	var target: int = await _kang_entry_loc(game)
+	if target < 0:
+		game._log("时间大师：没有可上场的地点，康留在场外", Color(0.8, 0.8, 0.8))
+		Events.emit_state_changed()
+		return
+	game.state["villain_off_field"] = false
+	game.state["villain_pos"] = target
+	game._log("时间大师：康在 %s 上场" % game._loc_name(target), Color(0.8, 0.6, 1))
+	# 「时间悖论」：只要这张威胁卡还在发挥作用，康每次进入游戏都以满血状态进行
+	if _kang_threat_count(game, "时间悖论") > 0:
+		game.state["villain_hp"] = int(game.state["villain_hp_max"])
+		game._log("时间悖论：康以满血状态（%d 点）进入游戏" % int(game.state["villain_hp"]), Color(0.9, 0.8, 0.6))
+	Events.emit_state_changed()
+	await game._trigger_full_bam()
+
+
+## 「时间军队」：场上每张生效的该威胁卡，都让"在有暴徒的地点结束回合"的英雄受到 1 点伤害。
+## 返回本次应造成的伤害点数（0 = 该威胁卡不在场）。由 Game.end_turn 调用。
+static func kang_time_army_damage(game: Node) -> int:
+	return _kang_threat_count(game, "时间军队")
+
+
+# ---------------------------------------------------------------- 犀牛人 (Rhino，第一季众筹)
+#
+# 卡面/面板口径（12 张行动卡 + 6 张威胁卡 + 面板全部逐张读图核对，见 反派_犀牛人_交接.md）：
+#   面板 生命值 2/3/4 人 = 5/8/11；
+#   面板 特别规则：① 英雄被 KO 时犀牛人不激活他的 BAM！，改为该英雄获得 1 个危机指示物；
+#                  ② 身上有任何危机指示物的英雄，下一回合打牌必须正面朝下在故事情节中，
+#                     然后丢弃他们所有的危机指示物；
+#   面板 BAM!：对犀牛人所在地点的每个英雄造成等同于"他本回合进入的地点数量"的伤害
+#              （多余伤害忽略），然后把这些英雄顺时针移动 1 个地点；
+#   面板 溢出效果：平民/暴徒放不下 → 抽取另一张反派行动卡并面朝下加入故事情节；
+#   威胁卡（6 张＝开阔地带 ×3 + 无掩护 ×3，全部没有生命值图标、底部 3 个英勇槽）：
+#     开阔地带：在此地点受到伤害的英雄还将获得 1 个危机指示物；
+#     无掩护：  在此位置结束回合的英雄将获得 1 个危机指示物。
+#   行动卡效果：12 张全部没有 effect 字段 —— 卡 1~4「犀牛充电」的移动由数据里的
+#              move = {dir: cw, hero_in: true}（= 顺时针走到下一个有英雄的地点）直接表达，
+#              与罗南同类卡的落库口径一致，因此**没有** rhino_* 的 resolve_effect 分支。
+#
+# 实现落点：本回合"进入的地点数量"由 Game 在反派回合开始时清零（state.rhino_moved_locs）、
+# 在 Game._do_villain_move 里累加（数字移动按实际步数、字典移动按 1 次）。
+
+## 本回合犀牛人进入的地点数量（= 面板 BAM 的伤害值）。
+static func _rhino_moved_this_turn(game: Node) -> int:
+	return int(game.state.get("rhino_moved_locs", 0))
+
+
+## 面板 BAM！：对犀牛人所在地点的每个英雄造成"本回合进入地点数"点伤害（多余伤害忽略——
+## 引擎的伤害本来就按手牌数封顶），然后把这些英雄顺时针移动 1 个地点。
+## 口径（均已在 rhino_test 里钉住）：
+##  - 伤害为 0（例如本回合没能移动）→ 没有人"受到伤害" → 不移动任何英雄；
+##  - 被这次伤害 KO 的英雄不再参与移动（已经出局），其 KO 走特殊规则①（获得 1 个危机指示物）；
+##  - 移动走 Game._set_hero_loc(..., "forced")：被犀牛人推着走也算"进入一个地点"，但不是英雄自己移动。
+static func _rhino_bam(game: Node) -> void:
+	var vpos: int = _vpos(game)
+	var dmg: int = _rhino_moved_this_turn(game)
+	if dmg <= 0:
+		game._log("犀牛人 BAM：本回合进入 0 个地点 → 0 点伤害，没有人受到伤害，因此不移动任何英雄",
+			Color(0.9, 0.8, 0.6))
+		Events.emit_state_changed()
+		return
+	var here: Array = _heroes_at(game, vpos).filter(func(h): return not game.state["heroes"][h]["ko"])
+	game._log("犀牛人 BAM：对 %s 的每个英雄造成 %d 点伤害（本回合进入 %d 个地点）"
+		% [game._loc_name(vpos), dmg, dmg], Color(1, 0.6, 0.4))
+	if here.size() == 0:
+		game._log("犀牛人 BAM：%s 没有英雄，本段不造成伤害" % game._loc_name(vpos), Color(0.8, 0.8, 0.8))
+	for hid in here:
+		await game._deal_damage_to_hero(String(hid), dmg)
+		if game.state["phase"] == "game_over":
+			return
+	var moved := 0
+	for hid in here:
+		var h: Dictionary = game.state["heroes"][hid]
+		if bool(h["ko"]):
+			continue   # 被这次 BAM 打倒的英雄已经出局，不再被推动
+		var cur: int = int(h["location"])
+		var nxt: int = game._next_live_loc(cur)
+		if nxt < 0 or nxt == cur:
+			continue
+		await game._set_hero_loc(String(hid), nxt, "forced")
+		moved += 1
+		game._log("%s 被犀牛人撞到顺时针相邻的 %s" % [DB.hero_name(String(hid)), game._loc_name(nxt)],
+			Color(0.8, 0.9, 1))
+	if moved == 0:
+		game._log("犀牛人 BAM：没有英雄被移动", Color(0.8, 0.8, 0.8))
+	Events.emit_state_changed()
+
+
+## 面板溢出：平民/暴徒放不下 → 抽取另一张反派行动卡并面朝下加入故事情节。
+## 卡面写"1 个或多个…"→ 一次结算事件只结算一次（与 count 无关）。
+static func _rhino_overflow(game: Node, loc: int) -> void:
+	game._log("溢出！%s 放不下指示物，犀牛人抽取 1 张反派行动卡面朝下加入故事情节" % game._loc_name(loc),
+		Color(1, 0.7, 0.5))
+	if game.state["master_deck"].size() == 0:
+		game._log("反派行动牌堆已空，无法抽取", Color(1, 0.5, 0.5))
+		Events.emit_state_changed()
+		return
+	var d: Variant = game.state["master_deck"].pop_front()
+	game.state["story"].append({"type": "villain", "villain": game.state["villain"],
+		"idx": d if d is int else -1, "move": 0, "face_down": true})
+	game._log("犀牛人把一张反派行动牌背面朝上放进故事情节", Color(0.8, 0.9, 1))
+	Events.emit_state_changed()
+
+
+## 特殊规则①：英雄被 KO 时，犀牛人不激活他的 BAM！，改为该英雄获得 1 个危机指示物。
+## （由 Game._ko_hero 在犀牛人这一局里调用，替代通用的"触发反派 BAM"分支。）
+static func _rhino_on_ko(game: Node, hid: String) -> void:
+	var h: Dictionary = game.state["heroes"][hid]
+	h["crisis"] = int(h.get("crisis", 0)) + 1
+	game._log("💥 %s 被击倒（KO）！犀牛人不激活 BAM，该英雄获得 1 个危机指示物（共 %d 个）"
+		% [DB.hero_name(hid), int(h["crisis"])], Color(0.9, 0.7, 1))
+	Events.emit_state_changed()
+
+
+## 特殊规则②（回合开始）：身上有任何危机指示物的英雄，本回合打牌必须正面朝下。
+## 复用引擎既有的"强制背面出牌"底层机制（state.forced_face_down_hero，与摩多克·心灵异能同一条路）。
+## 同时记下"这个英雄本回合结束时要把危机指示物全部丢弃"（真正的丢弃在 _rhino_on_hero_end_turn）。
+static func _rhino_start_turn(game: Node, hid: String) -> void:
+	var h: Dictionary = game.state["heroes"][hid]
+	if int(h.get("crisis", 0)) <= 0:
+		return
+	game.state["forced_face_down_hero"] = hid
+	game.state["rhino_face_down_discard_hero"] = hid
+	game._log("犀牛人特殊规则：%s 身上有 %d 个危机指示物，本回合打牌必须正面朝下"
+		% [DB.hero_name(hid), int(h["crisis"])], Color(1, 0.6, 0.5))
+
+
+## 英雄回合结束时（由 Game.end_turn 调用）：
+##  ① 威胁卡「无掩护」：在此位置结束回合的英雄将获得 1 个危机指示物；
+##  ② 特殊规则②：本回合被要求面朝下出牌的英雄，回合结束时丢弃所有的危机指示物。
+static func _rhino_on_hero_end_turn(game: Node, hid: String) -> void:
+	var h: Dictionary = game.state["heroes"][hid]
+	var loc: int = int(h["location"])
+	var t: Variant = game.state["locations"][loc]["threat"]
+	if t != null and String((t as Dictionary)["name"]) == "无掩护":
+		h["crisis"] = int(h.get("crisis", 0)) + 1
+		game._log("无掩护：%s 在 %s 结束回合，获得 1 个危机指示物（共 %d 个）"
+			% [DB.hero_name(hid), game._loc_name(loc), int(h["crisis"])], Color(0.9, 0.7, 1))
+	if String(game.state.get("rhino_face_down_discard_hero", "")) == hid:
+		var n: int = int(h.get("crisis", 0))
+		h["crisis"] = 0
+		game.state["rhino_face_down_discard_hero"] = ""
+		game._log("犀牛人特殊规则：%s 本回合已按规则面朝下出牌，丢弃所有危机指示物（%d 个）"
+			% [DB.hero_name(hid), n], Color(0.8, 0.8, 1))
+	Events.emit_state_changed()
+
+
+## 威胁卡「开阔地带」：在此地点受到伤害的英雄还将获得 1 个危机指示物。
+## 由 Game._deal_damage_to_hero 在实际结算完伤害之后调用：被免疫 / 被转移的伤害在上面就 return 了，
+## 所以那种情况不会走到这里（= 那不算"受到伤害"）。
+static func _rhino_on_hero_damaged(game: Node, hid: String) -> void:
+	var h: Dictionary = game.state["heroes"][hid]
+	var loc: int = int(h["location"])
+	var t: Variant = game.state["locations"][loc]["threat"]
+	if t == null or String((t as Dictionary)["name"]) != "开阔地带":
+		return
+	h["crisis"] = int(h.get("crisis", 0)) + 1
+	game._log("开阔地带：%s 在 %s 受到伤害，额外获得 1 个危机指示物（共 %d 个）"
+		% [DB.hero_name(hid), game._loc_name(loc), int(h["crisis"])], Color(0.9, 0.7, 1))
 	Events.emit_state_changed()

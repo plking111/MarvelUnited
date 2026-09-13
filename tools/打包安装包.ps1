@@ -49,9 +49,9 @@ $outBase = ([regex]::Match($issText, 'OutputBaseFilename=([^\r\n]*)')).Groups[1]
 $outDir = ([regex]::Match($issText, 'OutputDir=([^\r\n]*)')).Groups[1].Value
 
 # ③ 找 ISCC.exe：环境变量 → 常见路径 → 工作区旁边的 Inno Setup 7
-$iscc = $env:ISCC_BIN
-if (-not $iscc) { $iscc = '' }
-if (-not (Test-Path $iscc)) {
+$iscc = ''
+if ($env:ISCC_BIN) { $iscc = $env:ISCC_BIN }
+if ($iscc -eq '' -or -not (Test-Path $iscc)) {
   $cands = @(
     'C:\Program Files (x86)\Inno Setup 7\ISCC.exe',
     'C:\Program Files\Inno Setup 7\ISCC.exe',
@@ -61,7 +61,7 @@ if (-not (Test-Path $iscc)) {
   )
   foreach ($c in $cands) { if (Test-Path $c) { $iscc = $c; break } }
 }
-if (-not (Test-Path $iscc)) { Write-Host '找不到 ISCC.exe（设 ISCC_BIN 环境变量指向它）'; exit 2 }
+if ($iscc -eq '' -or -not (Test-Path $iscc)) { Write-Host '找不到 ISCC.exe（设 ISCC_BIN 环境变量指向它）'; exit 2 }
 Write-Host ('用编译器: ' + $iscc)
 Write-Host ('版本号: ' + $ver + ' → 产物名: ' + $outBase + '.exe')
 

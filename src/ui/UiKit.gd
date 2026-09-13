@@ -131,7 +131,7 @@ static func precache_async() -> void:
 	# 英雄/反派卡背
 	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig", "wasp", "okoye", "falcon", "antman", "spiderman2099", "blackcat", "venom", "spiderwoman", "vision", "hawkeye", "warmachine", "nickfury", "mantis", "shangchi", "drax", "drstrange", "ironfist", "punisher", "scarletwitch", "lukecage", "jessicajones", "quicksilver", "daredevil", "elektra", "adamwarlock", "missamerica", "nebula", "yondou", "ghostrider", "mockingbird", "shehulk", "squirrelgirl", "moonknight", "nova", "blade", "howardtheduck", "msmarvel"]:
 		paths.append(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang"]:
 		paths.append(DB.villain(vid)["back"])
 	for p in paths:
 		if _precache_requested.has(p):

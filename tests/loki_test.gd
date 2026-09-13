@@ -11,7 +11,7 @@ func _check(cond: bool, msg: String) -> void:
 
 func _ready() -> void:
 	# ========== 1. 数据完整性 ==========
-	_check(DB.villains.size() == 20, "反派总数 20 (实际 %d)" % DB.villains.size())
+	_check(DB.villains.size() == 22, "反派总数 22 (实际 %d)" % DB.villains.size())
 	var loki: Dictionary = DB.villain("loki")
 	_check(not loki.is_empty(), "loki 存在")
 	_check(loki["health"]["2"] == 3 and loki["health"]["3"] == 5 and loki["health"]["4"] == 7, "洛基生命 3/5/7")

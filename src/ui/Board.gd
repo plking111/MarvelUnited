@@ -802,6 +802,10 @@ func _refresh_villain() -> void:
 		_villain_deck_icon.texture = load(DB.villain(vid)["back"])
 		_villain_deck_num.text = "%d" % int(st.get("master_deck_count", (st.get("master_deck", []) as Array).size()))
 	_hp_label.text = "%d / %d" % [st["villain_hp"], st["villain_hp_max"]]
+	# 康（第一季众筹）：被「时间大师」移出游戏时，棋盘上不再显示他的图标，
+	# 所以在生命值后面标出"不在场上"（否则玩家只看到反派凭空消失）
+	if bool(st.get("villain_off_field", false)):
+		_hp_label.text += "（不在场上）"
 	var track: String = DB.villain(vid).get("plot_track", "")
 	if track == "fear":
 		_fear_bar.visible = true

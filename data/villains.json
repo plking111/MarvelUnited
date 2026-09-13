@@ -5133,5 +5133,562 @@
                                       "place":  null
                                   }
                               ]
+              },
+    "kang":  {
+                 "name":  "康",
+                 "name_en":  "KANG",
+                 "color":  "#85d8ec",
+                 "image":  "res://assets/cards/villains/kang/panel.png",
+                 "back":  "res://assets/cards/villains/kang/back.png",
+                 "health":  {
+                                "2":  4,
+                                "3":  7,
+                                "4":  10
+                            },
+                 "bam":  "如果康在一个地点：对康所在位置的每个英雄造成 2 点伤害，对其他位置的每个英雄造成 1 点伤害。如果康不在场上：在每个位置添加 1 个暴徒，且不再添加这张反派行动卡上指示的所有平民/暴徒。",
+                 "overflow":  "如果 1 个或多个平民/暴徒指示物无法添加到某个地点，则在该地点添加 1 个危机指示物。拥有危机指示物的地点将失去其回合结束效果。",
+                 "plot":  "",
+                 "plot_track":  "none",
+                 "fear_track_max":  0,
+                 "special":  "特殊规则：当英雄被 KO 时，康不会激活他的 BAM！改为他打出另一张反派行动牌。康可以被「时间大师」移出游戏（不在场上）；当他不在场上时，BAM！改为在每个地点添加 1 个暴徒，且不结算行动卡所示的添加平民/暴徒。",
+                 "threats":  [
+                                 {
+                                     "name":  "时间藏匿处",
+                                     "text":  "只要康在这个或相邻的地点，他就不能受到任何伤害。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 },
+                                 {
+                                     "name":  "时间悖论",
+                                     "text":  "只要这张威胁卡还在发挥作用，每当康进入游戏时，他都会以满血状态进行。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 },
+                                 {
+                                     "name":  "时间军队",
+                                     "text":  "只要这张威胁卡在起作用，英雄们在任何一个有暴徒的位置结束他们的回合都会受到 1 点伤害。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 },
+                                 {
+                                     "name":  "时间悖论",
+                                     "text":  "只要这张威胁卡还在发挥作用，每当康进入游戏时，他都会以满血状态进行。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 },
+                                 {
+                                     "name":  "时间军队",
+                                     "text":  "只要这张威胁卡在起作用，英雄们在任何一个有暴徒的位置结束他们的回合都会受到 1 点伤害。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 },
+                                 {
+                                     "name":  "时间藏匿处",
+                                     "text":  "只要康在这个或相邻的地点，他就不能受到任何伤害。（卡面底部有 3 个英勇槽。）",
+                                     "henchman_hp":  0,
+                                     "bam":  false,
+                                     "arrival":  false,
+                                     "start_turn":  false,
+                                     "constant":  true,
+                                     "clear":  [
+                                                   "heroic",
+                                                   "heroic",
+                                                   "heroic"
+                                               ]
+                                 }
+                             ],
+                 "actions":  [
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  false,
+                                     "effect":  {
+                                                    "type":  "kang_time_master",
+                                                    "name":  "时间大师",
+                                                    "text":  "如果康在一个地点，将他移出游戏。如果康不在场上，把他放在英雄最多的地点上场（相同则玩家选择）。然后 BAM！"
+                                                },
+                                     "place":  null
+                                 },
+                                 {
+                                     "move":  2,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "thug",
+                                                       "thug"
+                                                   ],
+                                                   [
+                                                       "thug"
+                                                   ],
+                                                   [
+                                                       "thug",
+                                                       "thug"
+                                                   ]
+                                               ]
+                                 },
+                                 {
+                                     "move":  0,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "thug",
+                                                       "thug"
+                                                   ],
+                                                   [
+                                                       "thug",
+                                                       "thug"
+                                                   ],
+                                                   [
+                                                       "thug",
+                                                       "thug"
+                                                   ]
+                                               ]
+                                 },
+                                 {
+                                     "move":  1,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ]
+                                               ]
+                                 },
+                                 {
+                                     "move":  2,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ]
+                                               ]
+                                 },
+                                 {
+                                     "move":  4,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "civ",
+                                                       "civ"
+                                                   ]
+                                               ]
+                                 },
+                                 {
+                                     "move":  5,
+                                     "bam":  true,
+                                     "effect":  null,
+                                     "place":  [
+                                                   [
+                                                       "thug",
+                                                       "civ",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "thug",
+                                                       "thug",
+                                                       "civ"
+                                                   ],
+                                                   [
+                                                       "thug",
+                                                       "civ",
+                                                       "civ"
+                                                   ]
+                                               ]
+                                 }
+                             ]
+             },
+    "rhino":  {
+                  "name":  "犀牛人",
+                  "name_en":  "Rhino",
+                  "color":  "#9fa6b2",
+                  "image":  "res://assets/cards/villains/rhino/panel.png",
+                  "back":  "res://assets/cards/villains/rhino/back.png",
+                  "health":  {
+                                 "2":  5,
+                                 "3":  8,
+                                 "4":  11
+                             },
+                  "bam":  "对犀牛人所在地点的每个英雄造成等同于他本回合进入的地点数量的伤害（多余伤害忽略），然后把这些英雄顺时针移动 1 个地点。",
+                  "overflow":  "如果无法将 1 个或多个平民/暴徒指示物添加到某个地点，请抽取另一张反派行动卡并将其面朝下添加到故事情节。",
+                  "plot":  "",
+                  "plot_track":  "none",
+                  "fear_track_max":  0,
+                  "special":  "特殊规则：当英雄被 KO 时，犀牛人不会激活他的 BAM！然后该英雄获得 1 个危机指示物。如果英雄有任何危机指示物，他们下一回合打牌必须正面朝下在故事情节中，然后丢弃他们所有的危机指示物。",
+                  "threats":  [
+                                  {
+                                      "name":  "开阔地带",
+                                      "text":  "在此地点受到伤害的英雄还将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  },
+                                  {
+                                      "name":  "无掩护",
+                                      "text":  "在此位置结束回合的英雄将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  },
+                                  {
+                                      "name":  "开阔地带",
+                                      "text":  "在此地点受到伤害的英雄还将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  },
+                                  {
+                                      "name":  "无掩护",
+                                      "text":  "在此位置结束回合的英雄将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  },
+                                  {
+                                      "name":  "开阔地带",
+                                      "text":  "在此地点受到伤害的英雄还将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  },
+                                  {
+                                      "name":  "无掩护",
+                                      "text":  "在此位置结束回合的英雄将获得 1 个危机指示物。（卡面底部有 3 个英勇槽。）",
+                                      "henchman_hp":  0,
+                                      "bam":  false,
+                                      "arrival":  false,
+                                      "start_turn":  false,
+                                      "constant":  true,
+                                      "clear":  [
+                                                    "heroic",
+                                                    "heroic",
+                                                    "heroic"
+                                                ]
+                                  }
+                              ],
+                  "actions":  [
+                                  {
+                                      "move":  {
+                                                   "dir":  "cw",
+                                                   "hero_in":  true
+                                               },
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  null
+                                  },
+                                  {
+                                      "move":  {
+                                                   "dir":  "cw",
+                                                   "hero_in":  true
+                                               },
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  null
+                                  },
+                                  {
+                                      "move":  {
+                                                   "dir":  "cw",
+                                                   "hero_in":  true
+                                               },
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  null
+                                  },
+                                  {
+                                      "move":  {
+                                                   "dir":  "cw",
+                                                   "hero_in":  true
+                                               },
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  null
+                                  },
+                                  {
+                                      "move":  4,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  2,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  1,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ],
+                                                    [
+                                                        "thug"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  1,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  2,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  3,
+                                      "bam":  true,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "civ"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  5,
+                                      "bam":  false,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ]
+                                                ]
+                                  },
+                                  {
+                                      "move":  0,
+                                      "bam":  false,
+                                      "effect":  null,
+                                      "place":  [
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ],
+                                                    [
+                                                        "thug",
+                                                        "civ"
+                                                    ]
+                                                ]
+                                  }
+                              ]
               }
 }

@@ -139,7 +139,7 @@ func _ready() -> void:
 		cb.call(0))
 
 	# ==================== ① 数据完整性 ====================
-	_check("① 反派总数 20", DB.villains.size() == 20, "实际 %d" % DB.villains.size())
+	_check("① 反派总数 22", DB.villains.size() == 22, "实际 %d" % DB.villains.size())
 	var v: Dictionary = DB.villain("modok")
 	_check("① modok 存在且 name/name_en 正确",
 		not v.is_empty() and String(v.get("name", "")) == "摩多克" and String(v.get("name_en", "")) == "M.O.D.O.K.",
@@ -343,6 +343,70 @@ func _ready() -> void:
 	_check("④ 意识转移的效果类型可被故事情节扫描识别",
 		VillainRules._modok_faceup_effect_count(Game, "modok_mind_transfer") == 0
 		and VillainRules._modok_faceup_effect_count(Game, "modok_superior_intellect") == 0, "")
+
+	# ============ ④b 意识转移 × 威胁卡 BAM（用户裁定：面板 BAM 与威胁卡 BAM 都触发） ============
+	# 用「变色龙」当威胁卡 BAM 用例：把它放在**没有英雄**的地点 → 它自己的 BAM 不造成伤害，
+	# 于是本步翻转数只可能来自「意识转移」，断言干净。
+	_prep([5, 5, 5])
+	_seed_story(4)
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 9, "move": 0})
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("变色龙"))
+	await Game._trigger_all_threat_bam()
+	_check("④b① 威胁卡 BAM 也会触发意识转移 → 多翻转 1 张英雄卡",
+		_facedown_count() == 1, "翻面=%d" % _facedown_count())
+	_check("④b① 变色龙所在地点没有英雄 → 自己那部分不造成伤害（翻转数只来自意识转移）",
+		(Game.state["heroes"]["cap"]["hand"] as Array).size() == 8,
+		"cap手牌=%d" % (Game.state["heroes"]["cap"]["hand"] as Array).size())
+
+	_prep([5, 5, 5])
+	_seed_story(5)
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 9, "move": 0})
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 10, "move": 0})
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("变色龙"))
+	await Game._trigger_all_threat_bam()
+	_check("④b② 两张意识转移同时正面朝上 → 威胁卡 BAM 也叠加翻 2 张",
+		_facedown_count() == 2, "翻面=%d" % _facedown_count())
+
+	_prep([5, 5, 5])
+	_seed_story(4)
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("变色龙"))
+	await Game._trigger_all_threat_bam()
+	_check("④b③ 故事情节里没有意识转移 → 威胁卡 BAM 不额外翻转",
+		_facedown_count() == 0, "翻面=%d" % _facedown_count())
+
+	# 意识转移「在场但面朝下」→ 视为空白、不额外翻（面板那份断言在 ④ 组里，这条是威胁卡 BAM 路径的对应项）
+	_prep([5, 5, 5])
+	_seed_story(4)
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 9, "move": 0, "face_down": true})
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("变色龙"))
+	await Game._trigger_all_threat_bam()
+	_check("④b③' 意识转移被翻成面朝下 → 威胁卡 BAM 不额外翻转（面朝下视为空白）",
+		_facedown_count() == 0, "翻面=%d" % _facedown_count())
+	_check("④b③' 前置：该卡确实在场且面朝下（不是「压根没这张卡」那种情况）",
+		VillainRules._modok_faceup_effect_count(Game, "modok_mind_transfer") == 0
+		and Game.state["story"].size() == 5, "%d" % Game.state["story"].size())
+
+	# 面板 BAM + 威胁卡 BAM 是两次 BAM 事件 → 各触发一次意识转移
+	# （面板：面板自己翻 1 + 意识转移 1 = 2；威胁卡：变色龙无英雄不翻 + 意识转移 1 = 3）
+	_prep([5, 5, 5])
+	_seed_story(4)
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 9, "move": 0})
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("变色龙"))
+	await Game._trigger_panel_bam()
+	var after_panel: int = _facedown_count()
+	await Game._trigger_all_threat_bam()
+	_check("④b④ 面板 BAM 与威胁卡 BAM 各触发一次意识转移（面板后=2，威胁卡后再 +1=3）",
+		after_panel == 2 and _facedown_count() == 3, "面板后=%d 威胁后=%d" % [after_panel, _facedown_count()])
+
+	# 同一次威胁卡 BAM 里不会把同一张卡的触发算两遍：只有 1 张带 BAM 的威胁卡在场 → 恰好 +1
+	_prep([5, 5, 5])
+	_seed_story(4)
+	Game.state["story"].append({"type": "villain", "villain": "modok", "idx": 9, "move": 0})
+	Game.state["locations"][4]["threat"] = _mk_threat(_threat_idx("活体激光"))
+	await Game._trigger_all_threat_bam()
+	# 活体激光：该地点无英雄 → 自己翻 1 张；意识转移再翻 1 张 → 共 2（若重复触发会变成 3）
+	_check("④b⑤ 同一次威胁卡 BAM 只触发一次意识转移（活体激光自己翻 1 + 意识转移 1 = 2，不是 3）",
+		_facedown_count() == 2, "翻面=%d" % _facedown_count())
 
 	# ==================== ⑤ 溢出：翻 1 张，且一次结算只结算一次 ====================
 	_prep()

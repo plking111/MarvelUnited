@@ -100,7 +100,7 @@ func _ready() -> void:
 	Game.autopilot = true
 
 	# ==================== ① 数据完整性 ====================
-	_check("① 反派总数 20（泽莫 19 → 加摩多克后 20）", DB.villains.size() == 20, "实际 %d" % DB.villains.size())
+	_check("① 反派总数 22（泽莫 19 → 摩多克 20 → 康 21 → 犀牛人 22）", DB.villains.size() == 22, "实际 %d" % DB.villains.size())
 	var z: Dictionary = DB.villain("zemo")
 	_check("① zemo 存在且 name_en = Baron Zemo",
 		not z.is_empty() and String(z.get("name_en", "")) == "Baron Zemo", str(z.get("name_en", "")))

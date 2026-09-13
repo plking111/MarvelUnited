@@ -25,7 +25,7 @@ func load_data() -> void:
 	energy_cards = inf.get("energy_cards", [])
 	s6 = _load_json("res://data/s6.json")
 	assert(heroes.size() >= 57, "英雄数据应至少57位（第一季众筹三批共37位 + 基础盒/瓦坎达/阿斯加德/银护/蜘蛛侠扩）")
-	assert(villains.size() == 20, "反派数据应有20个（19 + 第一季众筹·摩多克）")
+	assert(villains.size() == 22, "反派数据应有22个（19 + 第一季众筹·摩多克 + 第一季众筹·康 + 第一季众筹·犀牛人）")
 	assert(locations.size() == 44, "地点数据应有44张")
 	assert(missions.size() == 3, "任务卡应有3张")
 	assert(stones.size() == 6, "无限宝石应有6颗")

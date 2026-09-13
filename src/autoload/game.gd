@@ -131,6 +131,9 @@ func setup(villain_id: String, hero_ids: Array, challenge: String = "none", mode
 		"skip_villain_card": 0,   # 蜘蛛女·毒液冲击：下一个反派回合少打出的行动卡张数
 		"villain_extra_card_next_turn": 0,   # 摩多克·超级天才智能：下一个反派回合多打出的行动卡张数
 		"hero_start_loc": 0,      # 英雄起始地点（setup 时全部英雄的落点 = 反派初始地点的正对面；摩多克「制备」用）
+		"villain_off_field": false,   # 康（第一季众筹）：被「时间大师」移出游戏 → 不在场上（villain_pos = -1）
+		"rhino_moved_locs": 0,        # 犀牛人：本回合进入的地点数量（= 面板 BAM 的伤害值，反派回合开始时清零）
+		"rhino_face_down_discard_hero": "",   # 犀牛人：本回合被要求面朝下出牌、回合结束要丢弃全部危机指示物的英雄
 		"story": [],
 		"solved_threats": [],
 		"master_deck": [],
@@ -1308,6 +1311,11 @@ func _deal_damage_to_hero(hid: String, amount: int, no_redirect: bool = false) -
 			else:
 				h["deck"].append(c)
 		_log("%s 受到 %d 点伤害，弃 %d 张手牌到牌库底" % [DB.hero_name(hid), amount, dropped.size()], Color(1, 0.6, 0.6))
+	# 犀牛人威胁卡「开阔地带」：在此地点受到伤害的英雄还将获得 1 个危机指示物。
+	# 放在这里（实际结算完伤害之后、KO 判定之前）：被免疫/被转移的伤害在上面就已经 return，
+	# 那种情况不算"受到伤害"，不会走到这里。
+	if state["villain"] == "rhino":
+		VillainRules._rhino_on_hero_damaged(self, hid)
 	# 手牌被弃空（含刚好弃光）→ 该英雄被击倒（KO），触发反派 BAM
 	# 普通模式：手牌清空即 KO；神盾局模式：共享手牌机制不同，保持原判断（伤害超过可弃手牌才 KO）
 	if state["mode"] != "shield" and hand_ref.size() == 0:
@@ -1394,8 +1402,9 @@ func _ko_hero(hid: String) -> void:
 		_s6_add_face_down_card("英雄被 KO")
 		Events.emit_state_changed()
 		return
-	if state["villain"] == "kraven" or state["villain"] == "sandman":
-		# 猎人克莱文 / 沙人特殊规则：KO 时不触发 BAM，打出另一张反派行动牌
+	if state["villain"] == "kraven" or state["villain"] == "sandman" or state["villain"] == "kang":
+		# 猎人克莱文 / 沙人 / 康（第一季众筹）特殊规则：KO 时不触发 BAM，打出另一张反派行动牌
+		# （康的面板特别规则：当英雄被 KO 时，康不会激活他的 BAM！改为他打出另一张反派行动牌）
 		_log("💥 %s 被击倒（KO）！%s 不触发 BAM，改为立刻打出另一张反派行动卡！" % [DB.hero_name(hid), DB.villain_name(state["villain"])], Color(1, 0.5, 0.2))
 		state["extra_villain_card"] += 1
 		state["extra_villain_card_src"] = "%s 被击倒（KO）" % DB.hero_name(hid)
@@ -1406,6 +1415,10 @@ func _ko_hero(hid: String) -> void:
 		_log("💥 %s 被击倒（KO）！电光人不激活 BAM，改为在其所在地点放置 1 个危机指示物！" % DB.hero_name(hid), Color(1, 0.5, 0.2))
 		_electro_add_crisis(int(h["location"]))
 		Events.emit_state_changed()
+		return
+	if state["villain"] == "rhino":
+		# 犀牛人特殊规则①：英雄被 KO 时，犀牛人不激活他的 BAM！，改为该英雄获得 1 个危机指示物
+		VillainRules._rhino_on_ko(self, hid)
 		return
 	_log("💥 %s 被击倒（KO）！触发反派 BAM 效果！" % DB.hero_name(hid), Color(1, 0.5, 0.2))
 	await _trigger_panel_bam()
@@ -1487,6 +1500,10 @@ func _run_villain_turn(extra_only: bool = false) -> void:
 	state["cull_armor_used"] = false
 	state["proxima_parry_used"] = false
 	state["kraven_decoy_used"] = false
+	# 犀牛人：面板 BAM 的伤害 = "他本回合进入的地点数量"，所以每个反派回合开始时清零重算
+	# （数字移动在 _do_villain_move 里按步数累加，字典移动记 1 次）
+	if state["villain"] == "rhino":
+		state["rhino_moved_locs"] = 0
 	_log("—— 反派回合 #%d ——" % state["turn_count"], Color(1, 0.5, 0.5))
 	await _step_pause()
 	# extra_only（到达效果触发的"再打出一张行动牌"）：只打额外张数，不再默认额外打 1 张正常牌。
@@ -1632,7 +1649,9 @@ func _run_villain_turn(extra_only: bool = false) -> void:
 	# 反派回合结束：只有反派"到达效果"威胁仍在反派最终停留地点，才结算到达效果
 	# （若本回合中反派已离开该地点，则不再触发；避免与 BAM 伤害叠加导致重复弃牌）
 	await _step_pause()
-	await _trigger_threat_arrival(state["villain_pos"])
+	# 康（第一季众筹）：康不在场上时他没有停留地点，不结算任何威胁"到达效果"
+	if not (state["villain"] == "kang" and VillainRules.kang_off_field(self)):
+		await _trigger_threat_arrival(state["villain_pos"])
 	# 到达效果可能要求"反派回合结束后再进行一次反派回合"（如乌木侯劝诱-无英雄）
 	if state.get("extra_villain_turn", false) and state["phase"] != "game_over":
 		state["extra_villain_turn"] = false
@@ -1703,6 +1722,11 @@ func _move_desc(mv: Variant) -> String:
 
 ## 执行反派移动。数字=普通顺时针走 N 步；Dictionary=罗南特殊移动（顺/逆时针到下一有/无英雄地点）。
 func _do_villain_move(mv: Variant) -> void:
+	# 康（第一季众筹）：康不在场上（被「时间大师」移出游戏）时没有地点，任何移动都不发生
+	# （他不在这张行动卡所示的任何位置上，只有「时间大师」能决定他重新从哪个地点上场）
+	if state["villain"] == "kang" and VillainRules.kang_off_field(self):
+		_log("康不在场上，本次移动不结算", Color(0.8, 0.8, 0.8))
+		return
 	# 蜘猪侠卡通蛛网：下一个反派行动时，反派不能移动
 	if state.get("no_villain_move_next", false):
 		state["no_villain_move_next"] = false
@@ -1740,6 +1764,9 @@ func _do_villain_move(mv: Variant) -> void:
 			else:
 				tgt_txt = "有英雄" if want_hero else "没有英雄"
 			_log("反派%s移动到：%s（下一%s地点）" % [dir_txt, _loc_name(target), tgt_txt], Color(0.9, 0.7, 1))
+			# 犀牛人：一次字典移动 = 进入 1 个地点（面板 BAM 的伤害值要按它累加）
+			if state["villain"] == "rhino":
+				state["rhino_moved_locs"] = int(state.get("rhino_moved_locs", 0)) + 1
 		else:
 			_log("未找到符合条件的地点，反派停留原地", Color(0.9, 0.7, 1))
 		return
@@ -1750,12 +1777,17 @@ func _do_villain_move(mv: Variant) -> void:
 	if mv_n > 0:
 		# 数字移动在"存活环"上走 N 格：被摧毁的地点（章鱼博士）已被移出游戏，不能再停上去
 		var cur: int = state["villain_pos"]
+		var steps := 0
 		for step in range(mv_n):
 			var nxt: int = _next_live_loc(cur)
 			if nxt < 0 or nxt == cur:
 				break
 			cur = nxt
+			steps += 1
 		state["villain_pos"] = cur
+		# 犀牛人：数字移动按"实际走过的步数"累加进入过的地点数（面板 BAM 的伤害值）
+		if state["villain"] == "rhino" and steps > 0:
+			state["rhino_moved_locs"] = int(state.get("rhino_moved_locs", 0)) + steps
 		_log("反派移动到：%s" % _loc_name(cur), Color(0.9, 0.7, 1))
 
 ## 亡刃将军特殊移动：顺时针移动到下一个"有英雄"(single=false) 或 "只有一个英雄"(single=true) 的地点。
@@ -2141,6 +2173,11 @@ func _goblin_place_threat_from_deck(loc: int) -> void:
 	Events.emit_state_changed()
 
 func _do_placement(place: Array) -> void:
+	# 康（第一季众筹）：康不在场上时，面板 BAM 已经"在每个位置添加 1 个暴徒"，
+	# 并明确"不要添加这张反派行动卡上指示的所有需要添加的平民/暴徒" → 本张行动卡的放置图案整张不结算。
+	if VillainRules.kang_skip_placement(self):
+		_log("康不在场上：不结算这张行动卡所示的添加平民/暴徒", Color(0.8, 0.8, 0.8))
+		return
 	_begin_overflow_event()   # 一张行动卡的"放置"算一次结算事件
 	var vpos: int = state["villain_pos"]
 	var _vadj: Array = _adjacent_locs(vpos)
@@ -2455,6 +2492,10 @@ func _start_hero_turn() -> void:
 	if l["threat"] != null and String(l["threat"]["name"]) == "心灵异能" and String(state["villain"]) == "modok":
 		state["forced_face_down_hero"] = hid
 		_log("心灵异能：%s 本回合必须面朝下打出英雄卡（不会从自己的牌获得行动）" % DB.hero_name(hid), Color(1, 0.8, 0.4))
+	# 犀牛人特殊规则②：身上有任何危机指示物的英雄，本回合打牌必须正面朝下
+	# （回合结束时丢弃这些危机指示物，见 VillainRules._rhino_on_hero_end_turn）
+	if String(state["villain"]) == "rhino":
+		VillainRules._rhino_start_turn(self, hid)
 	# 罗南·太空伏击：在此地点开始回合的英雄受到 1 点伤害
 	if l["threat"] != null and l["threat"]["name"] == "太空伏击" and not h["ko"]:
 		_log("太空伏击：%s 开始回合受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.6, 0.4))
@@ -4087,6 +4128,10 @@ func _perform_attack_at(loc: int, tgt: String, hid: String) -> void:
 					if lthreat != null and lthreat["name"] == "幻象":
 						real_dmg = 0
 						_log("幻象：洛基在该地点不受任何伤害（攻击无效）", Color(0.7, 0.9, 0.9))
+				# 康·时间藏匿处威胁：只要康在该威胁卡所在地点**或与其相邻**，康就不受任何伤害
+				if state["villain"] == "kang" and real_dmg > 0 and not ign_red and VillainRules._kang_hideout_protects(self):
+					real_dmg = 0
+					_log("时间藏匿处：康在该威胁卡所在地点或相邻地点，不受任何伤害（攻击无效）", Color(0.7, 0.9, 0.9))
 				# 绿魔·以平民为盾：绿魔所在地点有"以平民为盾"威胁卡且该地点有平民 → 绿魔免受伤害
 				if state["villain"] == "goblin" and real_dmg > 0 and not ign_red:
 					var gvpos: int = state["villain_pos"]
@@ -6312,9 +6357,11 @@ func end_turn() -> void:
 		else:
 			_log("迈尔斯蛛网：%s 未在反派所在地点结束回合，效果未触发" % DB.hero_name(hid), Color(0.9, 0.8, 0.6))
 		h["miles_web_armed"] = false
-	if l["threat"] == null and int(l["crisis"]) > 0 and state["villain"] == "electro":
-		# 电光人：只要地点上有危机指示物，英雄就无法使用该地点的回合结束效果
-		_log("⚡ %s 有危机指示物，无法使用该地点的回合结束效果" % _loc_name(loc), Color(1, 0.85, 0.4))
+	if l["threat"] == null and int(l["crisis"]) > 0 and (state["villain"] == "electro" or state["villain"] == "kang"):
+		# 电光人 / 康（第一季众筹）：只要地点上有危机指示物，英雄就无法使用该地点的回合结束效果
+		# （康的面板溢出文字：拥有危机指示物的地点将失去其回合效果）
+		_log("%s %s 有危机指示物，无法使用该地点的回合结束效果"
+			% ["⚡" if state["villain"] == "electro" else "⏳", _loc_name(loc)], Color(1, 0.85, 0.4))
 	elif l["threat"] == null and state.get("mode", "") == "s6" and _s6_loc_has_villain(loc):
 		# 邪恶六人组：地点上有任何反派，英雄就不能使用该地点的回合结束效果
 		_log("🕸 %s 上有反派（%s），不能使用该地点的回合结束效果"
@@ -6330,11 +6377,23 @@ func end_turn() -> void:
 		if l["threat"]["name"] == "隐藏陷阱":
 			_log("隐藏陷阱：%s 在该地点结束回合，受到 1 点伤害" % DB.hero_name(hid), Color(1, 0.6, 0.4))
 			await _deal_damage_to_hero(hid, 1)
+	# 康·时间军队威胁（持续）：英雄在**有暴徒**的任何地点结束回合都受到 1 点伤害
+	# （与该地点有没有威胁卡无关；场上每张生效的「时间军队」各造成 1 点）
+	if state["villain"] == "kang" and int(l["thug"]) > 0:
+		var army_dmg: int = VillainRules.kang_time_army_damage(self)
+		if army_dmg > 0:
+			_log("时间军队：%s 在有暴徒的 %s 结束回合，受到 %d 点伤害"
+				% [DB.hero_name(hid), _loc_name(loc), army_dmg], Color(1, 0.6, 0.4))
+			await _deal_damage_to_hero(hid, army_dmg)
 	if state["phase"] == "game_over":
 		state["end_turn_busy"] = false
 		return
 	# 泽莫男爵特殊规则（裁定①②）：英雄回合结束 → 逐个危机指示物弹窗，盖住本回合行动卡的底部符号
 	await _zemo_cover_crisis(hid)
+	# 犀牛人：① 威胁卡「无掩护」→ 在此位置结束回合的英雄获得 1 个危机指示物；
+	#         ② 特殊规则②→ 本回合被要求面朝下出牌的英雄，回合结束时丢弃所有危机指示物
+	if String(state["villain"]) == "rhino":
+		VillainRules._rhino_on_hero_end_turn(self, hid)
 	if state["phase"] == "game_over":
 		state["end_turn_busy"] = false
 		return

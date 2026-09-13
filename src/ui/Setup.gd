@@ -59,9 +59,9 @@ var _mode_info_title: Label
 var _mode_info_desc: Label
 
 # 排序数据：拼音首字母 + 所属扩展盒（目前全部为基础盒）
-const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L", "ronan": "L", "goblin": "L", "corvus": "W", "vulture": "T", "mysterio": "S", "docock": "Z", "kraven": "L", "sandman": "S", "electro": "D", "zemo": "Z", "modok": "M"}
+const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L", "ronan": "L", "goblin": "L", "corvus": "W", "vulture": "T", "mysterio": "S", "docock": "Z", "kraven": "L", "sandman": "S", "electro": "D", "zemo": "Z", "modok": "M", "kang": "K", "rhino": "X"}
 const HERO_SORT := {"cap": "M", "ironman": "G", "cmarvel": "J", "hulk": "L", "widow": "H", "winter": "W", "shuri": "S", "blackpanther": "B", "korg": "K", "valkyrie": "N", "betaray": "M", "thor": "L", "starlord": "X", "rocket": "H", "gamora": "K", "groot": "G", "spiderman": "Z", "miles": "M", "gwenspider": "G", "spiderpig": "Z", "wasp": "H", "okoye": "A", "falcon": "L", "antman": "Y", "spiderman2099": "Z", "blackcat": "M", "venom": "D", "spiderwoman": "Z", "vision": "H", "hawkeye": "Y", "warmachine": "Z", "nickfury": "N", "mantis": "T", "shangchi": "S", "drax": "D", "drstrange": "Q", "ironfist": "T", "punisher": "C", "scarletwitch": "F", "lukecage": "L", "jessicajones": "J", "quicksilver": "K", "daredevil": "Y", "elektra": "A", "adamwarlock": "S", "missamerica": "M", "nebula": "X", "yondou": "Y", "ghostrider": "E", "mockingbird": "F", "shehulk": "N", "squirrelgirl": "S", "moonknight": "Y", "nova": "X", "blade": "D", "howardtheduck": "H", "msmarvel": "J"}
-const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德", "ronan": "银河护卫队", "goblin": "蜘蛛侠扩", "corvus": "第一季众筹", "vulture": "邪恶六人组", "mysterio": "邪恶六人组", "docock": "邪恶六人组", "kraven": "邪恶六人组", "sandman": "邪恶六人组", "electro": "邪恶六人组", "zemo": "第一季众筹", "modok": "第一季众筹"}
+const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德", "ronan": "银河护卫队", "goblin": "蜘蛛侠扩", "corvus": "第一季众筹", "vulture": "邪恶六人组", "mysterio": "邪恶六人组", "docock": "邪恶六人组", "kraven": "邪恶六人组", "sandman": "邪恶六人组", "electro": "邪恶六人组", "zemo": "第一季众筹", "modok": "第一季众筹", "kang": "第一季众筹", "rhino": "第一季众筹"}
 const HERO_EXP := {"cap": "基础盒", "ironman": "基础盒", "cmarvel": "基础盒", "hulk": "基础盒", "widow": "基础盒", "winter": "瓦坎达", "shuri": "瓦坎达", "blackpanther": "瓦坎达", "korg": "阿斯加德", "valkyrie": "阿斯加德", "betaray": "阿斯加德", "thor": "阿斯加德", "starlord": "银河护卫队", "rocket": "银河护卫队", "gamora": "银河护卫队", "groot": "银河护卫队", "spiderman": "蜘蛛侠扩", "miles": "蜘蛛侠扩", "gwenspider": "蜘蛛侠扩", "spiderpig": "蜘蛛侠扩", "wasp": "基础盒", "okoye": "第一季众筹", "falcon": "第一季众筹", "antman": "基础盒", "spiderman2099": "第一季众筹", "blackcat": "第一季众筹", "venom": "第一季众筹", "spiderwoman": "第一季众筹", "vision": "第一季众筹", "hawkeye": "第一季众筹", "warmachine": "第一季众筹", "nickfury": "第一季众筹", "mantis": "第一季众筹", "shangchi": "第一季众筹", "drax": "第一季众筹", "drstrange": "第一季众筹", "ironfist": "第一季众筹", "punisher": "第一季众筹", "scarletwitch": "第一季众筹", "lukecage": "第一季众筹", "jessicajones": "第一季众筹", "quicksilver": "第一季众筹", "daredevil": "第一季众筹", "elektra": "第一季众筹", "adamwarlock": "第一季众筹", "missamerica": "第一季众筹", "nebula": "第一季众筹", "yondou": "第一季众筹", "ghostrider": "第一季众筹", "mockingbird": "第一季众筹", "shehulk": "第一季众筹", "squirrelgirl": "第一季众筹", "moonknight": "第一季众筹", "nova": "第一季众筹", "blade": "第一季众筹", "howardtheduck": "第一季众筹", "msmarvel": "第一季众筹"}
 # 地点扩展页搜索用拼音首字母（除中文名外，也支持输入 JCH / YHWD 这类首字母过滤）
 const LOC_PINYIN := {"基础盒": "JCH", "无限战争": "WXZZ", "无限战争决战": "WXZZJZ", "瓦坎达": "WKD", "阿斯加德": "ASJD", "银河护卫队": "YHWD", "蜘蛛侠扩": "ZZXK"}
@@ -132,7 +132,7 @@ func _ready() -> void:
 			_mode_info_data = parsed
 	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig", "wasp", "okoye", "falcon", "antman", "spiderman2099", "blackcat", "venom", "spiderwoman", "vision", "hawkeye", "warmachine", "nickfury", "mantis", "shangchi", "drax", "drstrange", "ironfist", "punisher", "scarletwitch", "lukecage", "jessicajones", "quicksilver", "daredevil", "elektra", "adamwarlock", "missamerica", "nebula", "yondou", "ghostrider", "mockingbird", "shehulk", "squirrelgirl", "moonknight", "nova", "blade", "howardtheduck", "msmarvel"]:
 		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang", "rhino"]:
 		_villain_icons[vid] = load(DB.villain(vid)["back"])
 	for num in range(1, MODE_DATA.size() + 1):
 		var tex: Texture2D = load("res://assets/ui/modes/mode_%d.png" % num)
@@ -1117,7 +1117,7 @@ func _on_villain_random() -> void:
 	Events.emit_toast("已随机选择反派：%s" % DB.villain_name(_selected_villain))
 
 func _villain_random_pool() -> Array:
-	var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
+	var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang", "rhino"]
 	var q: String = _villain_search.text.strip_edges() if _villain_search != null else ""
 	if q == "":
 		return all_ids.duplicate()
@@ -1166,7 +1166,7 @@ func _render_villains() -> void:
 	if _mode == "iw" and _sort_mode == "alpha" and q == "":
 		# 无限战争战役（按首字母）：三手下置前（暗夜比邻星/黑矮星/乌木侯），
 		# 剩余按拼音排列，灭霸置暗放最后
-		var rest_ids: Array = ["redskull", "ultron", "taskmaster", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
+		var rest_ids: Array = ["redskull", "ultron", "taskmaster", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang", "rhino"]
 		rest_ids.sort_custom(func(a: String, b: String) -> bool: return str(VILLAIN_SORT[a]) < str(VILLAIN_SORT[b]))
 		rest_ids.append("thanos")   # 灭霸（决战专属）固定排最后
 		groups = [
@@ -1174,7 +1174,7 @@ func _render_villains() -> void:
 			{"name": "其他反派", "ids": rest_ids},
 		]
 	else:
-		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
+		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok", "kang", "rhino"]
 		if q != "":
 			# 搜索过滤：所有匹配反派合并成一个列表，按拼音重排，左上角紧凑排列
 			var matched: Array = []
