@@ -32,20 +32,24 @@ func _ready() -> void:
 	var gap := 20.0
 	var top := 555.0
 
-	# 创建房间（联机功能未实现，禁用）
+	# 创建房间（局域网联机：进大厅建房）
 	var create := UiKit.image_button("创建房间", btn_path + "online_1.png")
 	create.position = Vector2((1920.0 - bw) / 2.0, top)
 	create.custom_minimum_size = Vector2(bw, bh)
 	create.size = Vector2(bw, bh)
-	create.disabled = true
+	create.pressed.connect(func():
+		Net.lobby_entry = "create"
+		UiKit.goto_scene("res://src/ui/Lobby.tscn"))
 	add_child(create)
 	UiKit.slide_in(create, 60, 0.0)
-	# 加入房间（联机功能未实现，禁用）
+	# 加入房间（局域网联机：进大厅搜索/按 IP 加入）
 	var join := UiKit.image_button("加入房间", btn_path + "online_2.png")
 	join.position = Vector2((1920.0 - bw) / 2.0, top + (bh + gap))
 	join.custom_minimum_size = Vector2(bw, bh)
 	join.size = Vector2(bw, bh)
-	join.disabled = true
+	join.pressed.connect(func():
+		Net.lobby_entry = "join"
+		UiKit.goto_scene("res://src/ui/Lobby.tscn"))
 	add_child(join)
 	UiKit.slide_in(join, 60, 0.06)
 	# 本地游戏

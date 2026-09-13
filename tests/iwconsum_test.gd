@@ -26,7 +26,10 @@ func _ready() -> void:
 	Game.state["prev_hero_symbols"] = []
 	Game.state["used_tokens"] = {"move": 0, "attack": 0, "heroic": 0, "wild": 0}
 	# 拦截弹窗：自动选择"填充能量卡 1"
-	Events.prompt_choice.connect(func(opts: Array, _t: String, cb: Callable) -> void:
+	Events.prompt_action.connect(func(rows: Array, _t: String, cb: Callable) -> void:
+		var opts: Array = []
+		for r in rows:
+			opts.append(String(r.get("text", "")))
 		_seen_options = opts.duplicate()
 		var fill_idx := -1
 		for i in range(opts.size()):
@@ -42,8 +45,11 @@ func _ready() -> void:
 	_check(after == before - 1, "使用英勇填充能量卡后行动消耗（%d→%d）" % [before, after])
 	_check(Game.energy_filled(0) == 1, "能量卡填 1 槽")
 	# 第二次：选择"返回"应归还行动
-	Events.prompt_choice.disconnect(Events.prompt_choice.get_connections()[-1]["callable"])
-	Events.prompt_choice.connect(func(opts: Array, _t2: String, cb: Callable) -> void:
+	Events.prompt_action.disconnect(Events.prompt_action.get_connections()[-1]["callable"])
+	Events.prompt_action.connect(func(rows: Array, _t2: String, cb: Callable) -> void:
+		var opts: Array = []
+		for r in rows:
+			opts.append(String(r.get("text", "")))
 		_seen_options = opts.duplicate()
 		cb.call_deferred(opts.size() - 1))  # 选"返回"
 	before = Game.state["action_symbols"].size()

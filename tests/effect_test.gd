@@ -15,6 +15,12 @@ func _ready() -> void:
 		cb.call(auto))
 	await _test_give_wild()
 	await _test_give_wild_x2()
+	await _test_give_attack_x2()
+	await _test_prodigy()
+	await _test_problem_solver()
+	await _test_raccoon_senses()
+	await _test_genius_engineer()
+	await _test_korg_fighter()
 	await _test_draw_to_3()
 	await _test_photon_blast()
 	await _test_hulk_smash()
@@ -50,7 +56,7 @@ func _setup_eff(eff: Dictionary) -> void:
 	Game.state["played_effect"] = eff
 	Game.state["action_symbols"] = ["move"]  # 留一个符号：阻止自动结束回合推进（保持断言状态）
 
-## 触发当前效果：若有效果会弹选择框，用信号在下一帧自动应答
+## 触发当前效果：若有效果会弹选择框，用信号在下一帧自动应答（文字 prompt_choice 与图形 prompt_action 都应答）
 func _trigger(choice: Variant = null) -> void:
 	if choice == null:
 		await Game.trigger_effect()
@@ -59,9 +65,14 @@ func _trigger(choice: Variant = null) -> void:
 	var conn := func(opts: Array, title: String, cb: Callable) -> void:
 		await get_tree().process_frame
 		Game._on_answer(pending)
+	var conn_act := func(rows: Array, title: String, cb: Callable) -> void:
+		await get_tree().process_frame
+		Game._on_answer(pending)
 	Events.prompt_choice.connect(conn)
+	Events.prompt_action.connect(conn_act)
 	await Game.trigger_effect()
 	Events.prompt_choice.disconnect(conn)
+	Events.prompt_action.disconnect(conn_act)
 
 ## 触发当前效果并应答确认框（interrogate 用）
 func _trigger_confirm(ok: bool) -> void:
@@ -91,6 +102,71 @@ func _test_give_wild_x2() -> void:
 	_check("give_wild_x2 给任意英雄", Game.state["heroes"]["hulk"]["tokens"]["wild"] == b_hulk + 2,
 		"hulk %d->%d" % [b_hulk, Game.state["heroes"]["hulk"]["tokens"]["wild"]])
 
+## 触发当前效果，按弹窗标题关键字应答所有图形弹窗（answers = {标题含字串: 答案}；未匹配默认答 0）
+func _run_with_action_answers(answers: Dictionary) -> void:
+	var conn_act := func(rows: Array, title: String, cb: Callable) -> void:
+		await get_tree().process_frame
+		var val: Variant = 0
+		for k in answers:
+			if title.contains(k):
+				val = answers[k]
+				break
+		Game._on_answer(val)
+	Events.prompt_action.connect(conn_act)
+	await Game.trigger_effect()
+	Events.prompt_action.disconnect(conn_act)
+
+func _test_give_attack_x2() -> void:
+	await _setup_eff({"type": "give_attack_x2", "name": "钢铁侠：拿 2 个攻击指示物"})
+	var ids: Array = Game.state["hero_ids"]
+	var b0: int = int(Game.state["heroes"][ids[0]]["tokens"]["attack"])
+	var b1: int = int(Game.state["heroes"][ids[1]]["tokens"]["attack"])
+	await _run_with_action_answers({"分配第 1 个": 0, "分配第 2 个": 1})
+	_check("give_attack_x2 两次分配", Game.state["heroes"][ids[0]]["tokens"]["attack"] == b0 + 1 and Game.state["heroes"][ids[1]]["tokens"]["attack"] == b1 + 1,
+		"%s %d->%d, %s %d->%d" % [ids[0], b0, Game.state["heroes"][ids[0]]["tokens"]["attack"], ids[1], b1, Game.state["heroes"][ids[1]]["tokens"]["attack"]])
+
+func _test_prodigy() -> void:
+	await _setup_eff({"type": "prodigy", "name": "少年天才"})
+	var ids: Array = Game.state["hero_ids"]
+	var b: int = int(Game.state["heroes"][ids[0]]["tokens"]["wild"])
+	await _run_with_action_answers({"少年天才": 0})
+	_check("prodigy 万能给 0 号", Game.state["heroes"][ids[0]]["tokens"]["wild"] == b + 1,
+		"wild %d->%d" % [b, Game.state["heroes"][ids[0]]["tokens"]["wild"]])
+
+func _test_problem_solver() -> void:
+	await _setup_eff({"type": "problem_solver", "name": "问题解决者"})
+	var ids: Array = Game.state["hero_ids"]
+	var b: int = int(Game.state["heroes"][ids[0]]["tokens"]["attack"])
+	await _run_with_action_answers({"指示物类型": 1, "获得指示物的英雄": 0})
+	_check("problem_solver 攻击给 0 号", Game.state["heroes"][ids[0]]["tokens"]["attack"] == b + 1,
+		"attack %d->%d" % [b, Game.state["heroes"][ids[0]]["tokens"]["attack"]])
+
+func _test_raccoon_senses() -> void:
+	await _setup_eff({"type": "raccoon_senses", "name": "浣熊感官"})
+	var hid: String = Game.current_hero_id()
+	var b: int = int(Game.state["heroes"][hid]["tokens"]["wild"])
+	await _run_with_action_answers({"浣熊感官": 0})
+	_check("raccoon_senses 获得万能", Game.state["heroes"][hid]["tokens"]["wild"] == b + 1,
+		"wild %d->%d" % [b, Game.state["heroes"][hid]["tokens"]["wild"]])
+
+func _test_genius_engineer() -> void:
+	await _setup_eff({"type": "genius_engineer", "name": "天才技师"})
+	await _run_with_action_answers({"天才技师": 1})
+	_check("genius_engineer 指示物双倍", Game.state.get("token_double", false) == true,
+		"token_double=%s" % str(Game.state.get("token_double", false)))
+
+func _test_korg_fighter() -> void:
+	await _setup_eff({"type": "korg_fighter", "name": "科格战斗机"})
+	var hid: String = Game.current_hero_id()
+	var loc: int = Game.state["heroes"][hid]["location"]
+	Game.state["locations"][loc]["thug"] = 3
+	Game.state["locations"][loc]["threat"] = null
+	var b: int = Game.state["locations"][loc]["thug"]
+	# 模式选"所在地点 2 次攻击"=1；随后两个目标弹窗默认答 0=暴徒
+	await _run_with_action_answers({"攻击方式": 1})
+	_check("korg_fighter 2 次攻击暴徒", Game.state["locations"][loc]["thug"] == b - 2,
+		"thug %d->%d" % [b, Game.state["locations"][loc]["thug"]])
+
 func _test_draw_to_3() -> void:
 	await _setup_eff({"type": "draw_to_3", "name": "能量充能"})
 	var hid: String = Game.current_hero_id()
@@ -108,16 +184,16 @@ func _test_photon_blast() -> void:
 	Game.state["locations"][adj]["thug"] = 3
 	Game.state["locations"][adj]["threat"] = null
 	var b: int = Game.state["locations"][adj]["thug"]
-	# 光子冲击现在有 3 个弹窗：选相邻地点(选第2个) + 2 次攻击目标(都选暴徒)
-	var conn := func(opts: Array, title: String, cb: Callable) -> void:
+	# 光子冲击现在共 3 个图形弹窗：① 选相邻地点(选第 2 个=+1) → ②③ 两次攻击目标(都选 0=暴徒)
+	var conn_act := func(rows: Array, title: String, cb: Callable) -> void:
 		await get_tree().process_frame
-		if title.contains("相邻地点"):
+		if title.contains("选择攻击地点"):
 			Game._on_answer(1)
 		else:
 			Game._on_answer(0)
-	Events.prompt_choice.connect(conn)
+	Events.prompt_action.connect(conn_act)
 	await Game.trigger_effect()
-	Events.prompt_choice.disconnect(conn)
+	Events.prompt_action.disconnect(conn_act)
 	_check("photon_blast 2 次攻击", Game.state["locations"][adj]["thug"] == b - 2,
 		"thug %d->%d" % [b, Game.state["locations"][adj]["thug"]])
 

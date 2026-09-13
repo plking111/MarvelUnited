@@ -46,11 +46,18 @@ func _ready() -> void:
 	# 1) 移动后立即刷新：反派阶段内至少 2 次 state_changed（移动后 + 步骤间）
 	if snaps.size() < 2:
 		bad.append("移动后应立刻刷新（反派阶段内 state_changed=%d 次）" % snaps.size())
-	# 2) 每个快照都已是新位置（移动先发生）
+	# 2) 移动发生之后位置不能再回退。
+	#    注意：回合开头会先播"翻牌动画"（刻意设计：动画期间不把移动/效果写进故事区与日志），
+	#    所以首个快照允许是旧位置；从第一个"新位置"快照起，必须一直是新位置。
+	var seen_new := false
 	for s in snaps:
-		if s["pos"] != vto:
-			bad.append("移动应先于其他步骤发生")
+		if s["pos"] == vto:
+			seen_new = true
+		elif seen_new:
+			bad.append("移动之后位置又回退了（首个快照来自翻牌动画，允许旧位置）")
 			break
+	if not seen_new:
+		bad.append("整场反派回合都没出现新位置（移动没发生）")
 	# 3) 特殊效果在放置之前：存在 crisis>=1 且 civ 仍是基线（放置未发生）的快照
 	var effect_before_place := false
 	for s in snaps:

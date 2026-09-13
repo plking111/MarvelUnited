@@ -5,12 +5,12 @@ extends Control
 ## 新增任务类型：加 data/missions.json 条目 + 卡图即可；
 ## 若新卡图的指示物槽位布局不同，在本文件 MISSION_SLOTS 中按任务 id 追加。
 
-# 任务卡图上的槽位格中心（比例，相对卡图左上角；由任务卡原图亮度分析+连通域分析交叉得出）
-# 营救/击败：3x3 共 9 格；清除：2x2 共 4 格
+# 任务卡图上的槽位格中心（比例，相对卡图左上角；由任务卡原图亮度分析+连通域分析得出）
+# 营救/击败：3x3 共 9 格；清除：2x2 共 4 格（2026 重新校准：脚本分析 mission_*.png 卡面）
 const MISSION_SLOTS := {
-	"rescue": {"xs": [0.214, 0.497, 0.779], "ys": [0.339, 0.559, 0.749]},
-	"defeat": {"xs": [0.216, 0.499, 0.781], "ys": [0.350, 0.560, 0.748]},
-	"clear": {"xs": [0.324, 0.673], "ys": [0.428, 0.661]},
+	"rescue": {"xs": [0.217, 0.500, 0.782], "ys": [0.344, 0.555, 0.761]},
+	"defeat": {"xs": [0.219, 0.501, 0.782], "ys": [0.353, 0.561, 0.769]},
+	"clear": {"xs": [0.326, 0.674], "ys": [0.430, 0.667]},
 }
 
 var _holder: Control
@@ -32,7 +32,7 @@ func setup(m: Dictionary, mission_textures: Dictionary, icon_tex: Texture2D) -> 
 	_img.custom_minimum_size = Vector2(100, 140)
 	_img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	_img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	_img.texture = mission_textures.get(m["id"])
+	_img.texture = load(m["img"]) if m.get("img", "") != "" else mission_textures.get(m["id"])
 	_holder.add_child(_img)
 	_icon_tex = icon_tex
 	_slot_l = UiKit.label("", 15, Color(1, 0.9, 0.3))
@@ -47,7 +47,10 @@ func refresh(m: Dictionary) -> void:
 		if c != _img:
 			_holder.remove_child(c)
 			c.queue_free()
+	# 槽位模板：任务卡自带 xs/ys（如 B计划专属卡）优先，否则按任务 id 查表
 	var tpl: Dictionary = MISSION_SLOTS.get(m["id"], MISSION_SLOTS["clear"])
+	if m.has("xs") and m.has("ys"):
+		tpl = {"xs": m["xs"], "ys": m["ys"]}
 	var xs: Array = tpl["xs"]
 	var ys: Array = tpl["ys"]
 	var idx := 0

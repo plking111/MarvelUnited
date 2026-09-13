@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/modok_sheet_crop.gd" id="1"]
+
+[node name="modok_sheet_crop" type="Node"]
+script = ExtResource("1")

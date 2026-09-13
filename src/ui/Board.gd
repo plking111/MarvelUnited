@@ -17,6 +17,8 @@ const LOC_CARD_SIZE := 230.0
 
 var _popup: PopupLayer
 var _zoom_layer: CanvasLayer
+var _card_anim_layer: CanvasLayer   # 卡片动画层（layer 60）：出牌移动/抽牌翻面/反派牌弹窗的临时宿主
+var _card_anim_root: Control   # 卡片动画层的全屏容器（放动画中的卡片，用全局坐标定位）
 
 var _villain_panel: TextureRect
 var _villain_deck_label: Label
@@ -33,6 +35,7 @@ var _phase_label: Label
 var _turn_label: Label
 var _campaign_label: Label
 var _villain_deck_hint: Label   # 无限战争：反派牌堆顶是宝石时的提示
+var _villain_top_card: TextureRect   # 裁定③：阿戈摩托之球把"反派牌堆顶那张行动牌"贴卡图公开（悬停放大）
 var _energy_done_box: HBoxContainer  # Bug4：右侧 已完成能量卡图标区
 var _gauntlet: Control
 var _gauntlet_base: TextureRect
@@ -45,12 +48,19 @@ var _loc_views: Array = []
 var _story_box: HBoxContainer
 var _hand_box: HBoxContainer
 var _hand_panel: PanelContainer
+var _hand_tween: Tween   # 手牌卡悬停果冻/摇晃动画（同一时刻只对一张卡播放）
+var _hover_card: Control = null   # 当前被悬停放大的手牌卡（抽牌翻牌结束时需要清掉它的放大/晃动）
+var _hand_disp_ctx: String = ""     # 上次刷新手牌的显示上下文（"h:<hid>" / "shield"），抽牌动画检测用
+var _hand_disp_combos: Array = []   # 上次刷新手牌的卡组合（普通=h[i]索引；神盾=hero/idx），抽牌动画检测用
+var _revealing_villain: bool = false   # 动画4：反派出牌弹窗展示中（防重复触发）
 var _hand_label: Label
 var _hand_random: ColorRect   # 乌木侯控制时叠在手牌区的暗色遮罩
 var _hand_random_btn: Button  # 手牌区中央的"随机出牌"按钮
 var _action_box: HBoxContainer
 var _token_box: HBoxContainer
 var _log_box: VBoxContainer
+var hand_hero_id := ""     # 手牌区当前显示哪位英雄的牌（联机时固定为自己的英雄）
+var _mp_peers_box: VBoxContainer = null   # 联机：右下角"队友手牌张数"
 var _log_scroll: ScrollContainer
 var _icon_nodes: Array = []
 var _prev_icon_locs: Dictionary = {}   # 上次刷新时的角色位置（英雄id/villain -> 地点）
@@ -100,22 +110,34 @@ func _ready() -> void:
 		"defeat": load("res://assets/tokens/mission_defeat.png"),
 		"clear": load("res://assets/tokens/mission_clear.png"),
 	}
-	# 英雄/反派图标：使用卡牌背面图（英雄=英雄卡背，反派=反派行动牌背）
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]:
-		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]:
-		_villain_icons[vid] = load(DB.villain(vid)["back"])
+	# 英雄/反派图标：使用卡牌背面图（英雄=英雄卡背，反派=反派行动牌背）。
+	# ⚠️ 这里以前是**写死的 id 列表**，每加一批英雄都得手改；第三批 13 位就漏改了，
+	#    结果地点上的英雄图标全是黑的（贴图加载为空 → 露出深色底板）。
+	#    现在直接遍历 DB 的全部键，新增英雄/反派自动生效，不会再漏。
+	for hid in DB.heroes.keys():
+		_hero_icons[String(hid)] = load(DB.hero_back(String(hid)))
+	for vid in DB.villains.keys():
+		_villain_icons[String(vid)] = load(DB.villain(String(vid))["back"])
 	_build_ui()
 	# 弹窗/提示信号 → 弹窗层模块（CanvasLayer=100，永不被主界面内容遮挡）
 	Events.state_changed.connect(_refresh_all)
 	Events.log_line.connect(_on_log)
 	Events.prompt_choice.connect(_popup.show_prompt)
 	Events.prompt_confirm.connect(_popup.show_confirm)
+	Events.prompt_action.connect(_popup.show_action_prompt)
 	Events.prompt_hand_card.connect(_popup.show_hand_pick)
 	Events.prompt_story_card.connect(_popup.show_story_pick)
 	Events.prompt_villain_card.connect(_popup.show_villain_card)
 	Events.prompt_deck_card.connect(_popup.show_deck_pick)
 	Events.prompt_hero_pick.connect(_popup.show_hero_pick)
+	Events.prompt_reorder.connect(_popup.show_reorder_prompt)
+	# 联机：不是本人的弹窗置为只读（只展示、点不动）
+	Events.popup_readonly_changed.connect(_popup.set_readonly)
+	# 联机：主机告知"这个弹窗已经处理完了" → 收起本机弹窗
+	# （bug4：别人已经选完，自己这边还挂着弹窗；以前也不关）
+	Net._popup_cmd.connect(func(cmd: String) -> void:
+		if cmd == "hide":
+			_popup.hide_all_prompts())
 	Events.toast.connect(_popup.show_toast)
 	Events.mission_completed.connect(_popup.show_mission_completed)
 	Events.game_over.connect(_on_game_over)
@@ -127,6 +149,11 @@ func _ready() -> void:
 	if _setup.get("debug_full_slots", false):
 		_fill_all_slots()
 	_refresh_all()
+	_build_mp_peers()
+	# 联机：房主的 Board 就绪后自动开始第一个反派回合（客户端只等主机快照）
+	if Game.net_auto_start and Net.is_host:
+		Game.net_auto_start = false
+		await Game.start_game()
 
 ## 调试用：把所有地点的槽位填满（平民/暴徒交替）
 func _fill_all_slots() -> void:
@@ -149,6 +176,36 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F3:
 		_show_coords = not _show_coords
 		_coord_label.visible = _show_coords
+	# 悬停放大预览：滚轮放大/缩小（仅在放大图显示时生效，不影响地图缩放）
+	if event is InputEventMouseButton and event.pressed and _zoom_panel != null and _zoom_panel.visible:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_zoom_mul = clampf(_zoom_mul * 1.15, 0.25, 4.0)
+			_apply_zoom_size()
+			get_viewport().set_input_as_handled()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_zoom_mul = clampf(_zoom_mul / 1.15, 0.25, 4.0)
+			_apply_zoom_size()
+			get_viewport().set_input_as_handled()
+
+## 按当前滚轮倍率重新设置放大预览的尺寸（并保持贴着鼠标）；
+## 上限：任何情况下都不超出屏幕（宽/高各留 40px 边距），超出则回收倍率
+func _apply_zoom_size() -> void:
+	var vp: Vector2 = get_viewport_rect().size
+	var max_w: float = maxf(vp.x - 80.0, 120.0)
+	var max_h: float = maxf(vp.y - 80.0, 120.0)
+	var zs: Vector2 = _zoom_base_size * _zoom_mul
+	var f := 1.0
+	if zs.x > max_w:
+		f = minf(f, max_w / zs.x)
+	if zs.y > max_h:
+		f = minf(f, max_h / zs.y)
+	if f < 1.0:
+		_zoom_mul = clampf(_zoom_mul * f, 0.25, 4.0)   # 收到上限，滚轮再放大也不会溢出屏幕
+		zs = _zoom_base_size * _zoom_mul
+	_zoom_panel.custom_minimum_size = zs
+	_zoom_panel.size = zs
+	_zoom_panel.pivot_offset = zs / 2.0
+	_update_zoom_position()
 
 func _toggle_fullscreen() -> void:
 	if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN:
@@ -170,6 +227,7 @@ func _build_ui() -> void:
 	villain_bg.size = Vector2(410, 272)
 	villain_bg.add_theme_stylebox_override("panel", UiKit.box_style(Color(0.16, 0.16, 0.24, 0.85), Color(0.55, 0.45, 0.75, 0.9)))
 	add_child(villain_bg)
+	_villain_bg = villain_bg
 	# 反派面板（子节点相对 villain_bg 定位）
 	_villain_panel = TextureRect.new()
 	_villain_panel.position = Vector2(5, 5)
@@ -248,6 +306,20 @@ func _build_ui() -> void:
 	_villain_deck_hint.add_theme_constant_override("outline_size", 3)
 	_villain_deck_hint.visible = false
 	add_child(_villain_deck_hint)
+	# 裁定③（新口径）：阿戈摩托之球生效期间，反派牌堆顶那张行动牌**贴卡图**放在反派牌堆右侧。
+	# 悬停放大复用 Board 自己的 _zoom_show()/_zoom_hide()（与手牌/故事情节同一套放大机制）。
+	# 贴图来源每帧只认 state 里的 villain_top_public / villain_top_idx（联机时由主机下发，
+	# 客户端**读不到也不允许读** master_deck）。
+	_villain_top_card = TextureRect.new()
+	_villain_top_card.position = Vector2(518, 176)
+	_villain_top_card.custom_minimum_size = Vector2(86, 120)
+	_villain_top_card.size = Vector2(86, 120)
+	_villain_top_card.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_villain_top_card.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_villain_top_card.mouse_filter = Control.MOUSE_FILTER_STOP   # 需要收到鼠标悬停才能放大
+	_villain_top_card.visible = false
+	add_child(_villain_top_card)
+	_bind_zoom(_villain_top_card)
 	_villain_deck_info = Control.new()
 	_villain_deck_info.position = Vector2(432, 200)
 	_villain_deck_info.custom_minimum_size = Vector2(38, 52)
@@ -466,6 +538,12 @@ func _build_ui() -> void:
 	_zoom_layer = CanvasLayer.new()
 	_zoom_layer.layer = 50
 	add_child(_zoom_layer)
+	# 卡片动画层：放在主场景根下（与手牌/故事情节处于同一坐标系，坐标才不会错乱），z_index 置顶显示
+	_card_anim_root = Control.new()
+	_card_anim_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_card_anim_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card_anim_root.z_index = 100
+	add_child(_card_anim_root)
 	_zoom_panel = TextureRect.new()
 	_zoom_panel.anchor_left = 0.0
 	_zoom_panel.anchor_top = 0.0
@@ -490,6 +568,13 @@ func _build_ui() -> void:
 	add_child(_coord_label)
 
 func _process(_delta: float) -> void:
+	# 动画4：检测反派出牌展示请求（game 阻塞等待中）→ 弹窗展示 → 完成后恢复回合
+	var pend_rv: int = int(Game.state.get("pending_villain_reveal", -1))
+	if pend_rv >= 0 and not _revealing_villain:
+		_revealing_villain = true
+		_popup.show_villain_reveal(pend_rv, func():
+			_revealing_villain = false
+			Game._villain_reveal_done())
 	# 放大预览跟随鼠标（画布坐标，实时贴合）
 	if _zoom_panel != null and _zoom_panel.visible:
 		_update_zoom_position()
@@ -550,8 +635,31 @@ func _show_location_info(i: int) -> void:
 func _refresh_all() -> void:
 	if Game.state.is_empty():
 		return
+	_sync_log()          # 日志以 state["log"] 为准（联机时客户端靠快照同步）
+	_refresh_mp_peers()  # 联机：右下角队友手牌张数
+	# 无限战争：能量卡是全场公共资源（大家一起填），联机时客户端必须每次都按
+	# 快照重绘——以前只在 _refresh_villain 的某条分支里刷新，客户端常常刷不到。
+	if String(Game.state.get("mode", "")) == "iw":
+		_refresh_energy_cards(Game.state)
+		_refresh_energy_done(Game.state)
+		# 联机诊断：客户端把它"实际收到的"公共能量卡填充状态写进游戏日志（内容变化时才写），
+		# 便于一眼看出是"没收到"还是"收到了但没画出来"。
+		if Net.active and not Net.is_host:
+			var et: String = str(Game.state.get("energy_tokens", {}))
+			if et != _dbg_energy_last:
+				_dbg_energy_last = et
+				print("[诊断] 客户端能量卡填充状态：%s" % et)
 	_refresh_villain()
-	_refresh_missions()
+	if String(Game.state.get("mode", "")) == "s6":
+		_refresh_missions()          # s6 不用任务卡：下面会隐藏任务栏
+		if _mission_box != null:
+			_mission_box.visible = false
+		_refresh_s6_center(Game.state)
+	else:
+		_refresh_missions()
+		if _mission_box != null:
+			_mission_box.visible = true
+		_hide_s6_center()
 	_refresh_locations()
 	_refresh_story()
 	_refresh_hand()
@@ -567,14 +675,132 @@ func _clear_children(container: Node) -> void:
 		container.remove_child(c)
 		c.queue_free()
 
+# ================================================================ 联机：队友手牌张数（屏幕右下角）
+
+## 联机时在右下角挂一个小面板。用户要求：队友的手牌看不见，但要看得到"有几张"。
+func _build_mp_peers() -> void:
+	if not Net.active or _mp_peers_box != null:
+		return
+	var panel := PanelContainer.new()
+	panel.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.10, 0.10, 0.16, 0.90)))
+	panel.anchor_left = 1.0
+	panel.anchor_top = 1.0
+	panel.anchor_right = 1.0
+	panel.anchor_bottom = 1.0
+	panel.offset_left = -320.0
+	panel.offset_top = -160.0
+	panel.offset_right = -18.0
+	panel.offset_bottom = -18.0
+	panel.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(panel)
+	_mp_peers_box = VBoxContainer.new()
+	_mp_peers_box.add_theme_constant_override("separation", 6)
+	panel.add_child(_mp_peers_box)
+
+func _refresh_mp_peers() -> void:
+	if _mp_peers_box == null:
+		return
+	_clear_children(_mp_peers_box)
+	var t := UiKit.label("队友手牌", 18, Color(1, 0.9, 0.5))
+	_mp_peers_box.add_child(t)
+	var shown := 0
+	for i in range(Net.seats.size()):
+		var s: Variant = Net.seats[i]
+		if s == null or int(s["peer"]) == Net.my_peer:
+			continue
+		var hero := String(s.get("hero", ""))
+		if hero == "":
+			continue
+		var n := 0
+		if (Game.state.get("heroes", {}) as Dictionary).has(hero):
+			var h: Dictionary = Game.state["heroes"][hero]
+			# 主机的 state 里就是真手牌；客户端拿到的是裁剪过的快照，用 hand_count
+			n = int(h.get("hand_count", (h.get("hand", []) as Array).size()))
+		# 一行 = 英雄图标（卡背）+ 名字 + 张数
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		_mp_peers_box.add_child(row)
+		var ic := TextureRect.new()
+		ic.texture = load(DB.hero_back(hero))
+		ic.custom_minimum_size = Vector2(34, 46)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(ic)
+		var gone: String = "（已退出·房主代管）" if bool(s.get("disconnected", false)) else ""
+		var lb := UiKit.label("P%d %s：%d 张%s" % [i + 1, String(s.get("name", "")), n, gone], 16, Color(0.92, 0.96, 1))
+		lb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(lb)
+		shown += 1
+	if shown == 0:
+		_mp_peers_box.add_child(UiKit.label("（暂无其他玩家）", 16, Color(0.8, 0.8, 0.9)))
+
+## "现在能用的顶牌 idx"：不可公开 / 没有合法 idx / idx 越界 / s6 → -1。
+## - 联机客户端只认 state 里的 villain_top_public / villain_top_idx（主机下发；快照里
+##   master_deck 已被裁成空数组）——**客户端绝不读 master_deck**。
+## - 单机 / 主机自己的界面：本地状态里没有这两个下发字段 → 本地直接算（同一口径）。
+func _villain_top_idx_for(st: Dictionary) -> int:
+	var pub := false
+	var tidx := -1
+	if st.has("villain_top_public"):
+		pub = bool(st.get("villain_top_public", false))
+		tidx = int(st.get("villain_top_idx", -1))
+	elif not Net.active or Net.is_host:
+		pub = Game._villain_top_public_now()
+		tidx = Game._next_villain_action_from_top() if pub else -1
+	if not pub:
+		return -1
+	# 邪恶六人组模式没有"主计划牌堆"（用它自己那套行动卡），不做顶牌公开
+	if String(st.get("mode", "base")) == "s6":
+		return -1
+	var vid: String = String(st.get("villain", ""))
+	if tidx < 0 or vid == "" or not DB.villains.has(vid):
+		return -1
+	if tidx >= (DB.villain(vid).get("actions", []) as Array).size():
+		return -1      # 越界（数据坏了/被改了）：宁可什么都不显示，也不要崩
+	return tidx
+
+## 裁定③（新口径）：阿戈摩托之球把"反派牌堆顶那张行动牌"**贴卡图**公开在反派牌堆右侧。
+## - 返回 true = 卡图已显示（调用方据此关掉文字提示，避免文字 + 卡图并存）。
+## - 失效（离开可见区）与"顶牌变了"由本函数每次刷新时重算：idx 变了就换贴图，失效就隐藏。
+func _refresh_villain_top_card(st: Dictionary) -> bool:
+	if _villain_top_card == null:
+		return false
+	var tidx: int = _villain_top_idx_for(st)
+	var tex: Texture2D = null
+	if tidx >= 0:
+		tex = load(UiKit.villain_action_image(String(st.get("villain", "")), tidx))
+	if tex == null:
+		# 不可公开 / 缺图 → 不显示（文字提示由调用方兜底）
+		_villain_top_card.visible = false
+		_villain_top_card.texture = null
+		if _zoom_panel != null and _zoom_panel.visible:
+			_zoom_hide()
+		return false
+	# 顶牌换了 → 贴图跟着换（复用同一个节点，不重建）
+	if _villain_top_card.texture != tex:
+		_villain_top_card.texture = tex
+		if _zoom_panel != null and _zoom_panel.visible:
+			_zoom_show(_villain_top_card)   # 正在放大看时顶牌变了 → 放大图同步换成新牌
+	_villain_top_card.visible = true
+	return true
+
 func _refresh_villain() -> void:
 	var st: Dictionary = Game.state
+	if String(st.get("mode", "")) == "s6":
+		_refresh_s6_panel(st)
+		return
 	var vid: String = st["villain"]
+	_villain_bg.size = Vector2(410, 272)   # 非 s6 模式恢复原尺寸
+	_villain_panel.visible = true
+	_hp_label.visible = true
 	_villain_panel.texture = load(DB.villain_image(vid))
 	# 反派牌堆数量（与英雄牌库显示一致：背面图标 + 数字）
 	if _villain_deck_icon != null:
 		_villain_deck_icon.texture = load(DB.villain(vid)["back"])
-		_villain_deck_num.text = "%d" % st["master_deck"].size()
+		_villain_deck_num.text = "%d" % int(st.get("master_deck_count", (st.get("master_deck", []) as Array).size()))
 	_hp_label.text = "%d / %d" % [st["villain_hp"], st["villain_hp_max"]]
 	var track: String = DB.villain(vid).get("plot_track", "")
 	if track == "fear":
@@ -592,14 +818,72 @@ func _refresh_villain() -> void:
 		_fear_label.visible = true
 		_fear_label.text = "屠宰轨道：%d / 12" % st.get("slaughter", 0)
 		_ko_icon.visible = false
-	elif track == "ko":
-		# 罗南 KO 指示物计数：累计 4 个英雄失败
+	elif track == "loot":
+		# 秃鹫战利品：2/3/4 人 = 9/7/5 个即英雄失败
+		var loot_max: int = 5 if st["hero_ids"].size() >= 4 else (7 if st["hero_ids"].size() == 3 else 9)
+		_fear_bar.visible = true
+		_fear_bar.max_value = loot_max
+		_fear_bar.value = st.get("vulture_loot", 0)
+		_fear_label.visible = true
+		_fear_label.text = "🦅 战利品：%d / %d" % [st.get("vulture_loot", 0), loot_max]
+		_ko_icon.visible = false
+	elif track == "destroyed":
+		# 章鱼博士：地点摧毁进度（4 个及以上即英雄失败）
+		var dcount := 0
+		for _dl in st["locations"]:
+			if _dl.get("destroyed", false):
+				dcount += 1
 		_fear_bar.visible = true
 		_fear_bar.max_value = 4
+		_fear_bar.value = dcount
+		_fear_label.visible = true
+		_fear_label.text = "🏚 已摧毁地点：%d / 4" % dcount
+		_ko_icon.visible = false
+	elif track == "ko":
+		# KO 指示物计数：罗南累计 4 个失败；亡刃将军累计 == 英雄数失败
+		var ko_max: int = st["hero_ids"].size() if vid == "corvus" else 4
+		_fear_bar.visible = true
+		_fear_bar.max_value = ko_max
 		_fear_bar.value = st.get("ko_tokens", 0)
 		_fear_label.visible = true
-		_fear_label.text = "KO 指示物：%d / 4" % st.get("ko_tokens", 0)
+		_fear_label.text = "KO 指示物：%d / %d" % [st.get("ko_tokens", 0), ko_max]
 		_ko_icon.visible = true
+	elif track == "allko":
+		# 猎人克莱文：英雄们"同一时间"全部被击倒即失败
+		var kcount := 0
+		for _hid in st["hero_ids"]:
+			if st["heroes"][_hid]["ko"]:
+				kcount += 1
+		_fear_bar.visible = true
+		_fear_bar.max_value = maxi(st["hero_ids"].size(), 1)
+		_fear_bar.value = kcount
+		_fear_label.visible = true
+		_fear_label.text = "💀 同时 KO：%d / %d（全部同时 KO 即失败）" % [kcount, st["hero_ids"].size()]
+		_ko_icon.visible = true
+	elif track == "hp":
+		# 沙人：生命值达到 20 即英雄失败（生命值可超过上限）
+		_fear_bar.visible = true
+		_fear_bar.max_value = 20
+		_fear_bar.value = mini(int(st["villain_hp"]), 20)
+		_fear_label.visible = true
+		_fear_label.text = "🏖 沙人生命值：%d / 20（达到 20 即失败）" % int(st["villain_hp"])
+		_ko_icon.visible = false
+	elif track == "crisis":
+		# 电光人：所有地点都有危机指示物即英雄失败
+		var ccount := 0
+		var ctotal := 0
+		for _cl in st["locations"]:
+			if _cl.get("destroyed", false):
+				continue
+			ctotal += 1
+			if int(_cl["crisis"]) > 0:
+				ccount += 1
+		_fear_bar.visible = true
+		_fear_bar.max_value = maxi(ctotal, 1)
+		_fear_bar.value = ccount
+		_fear_label.visible = true
+		_fear_label.text = "⚡ 有危机的地点：%d / %d（全部都有即失败）" % [ccount, ctotal]
+		_ko_icon.visible = false
 	else:
 		_fear_bar.visible = false
 		_fear_label.visible = false
@@ -679,12 +963,19 @@ func _on_game_over(victory: bool, reason: String) -> void:
 		var extra := "【战役进度】第 %d/3 局前哨战结束 ｜ 灭霸已收集宝石 %d/6 颗\n%s" % [game_no, stones, reason]
 		if not victory:
 			extra += "\n（本局埋入的宝石已全部落入灭霸手中）"
-		_popup.show_game_over(victory, extra, Callable(self, "_start_next_campaign_game"))
+		# 联机：由房主决定何时开下一局，客户端不给按钮（点了也没用）
+		var _next_cb := Callable(self, "_start_next_campaign_game")
+		if Net.active and not Net.is_host:
+			_next_cb = Callable()
+		_popup.show_game_over(victory, extra, _next_cb)
 		return
 	_popup.show_game_over(victory, reason)
 
 ## 开始下一局战役：更新 campaign 局数并重新 setup
 func _start_next_campaign_game() -> void:
+	if Net.active:
+		Net.host_next_campaign_game()   # 联机：房主广播下一局，全场一起重开
+		return
 	var c: Dictionary = Game.pending_campaign
 	c["game"] = int(c.get("game", 1)) + 1
 	Game.pending_campaign = c
@@ -714,6 +1005,9 @@ func _refresh_story() -> void:
 		tr.custom_minimum_size = Vector2(46, 64)
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		# 固定为卡图本身的大小（竖直居中）——这样"卡上叠加图标"的坐标就以卡图为基准，
+		# 不受故事情节条 92px 高度的影响（视觉与原先 KEEP_ASPECT_CENTERED 一致）
+		tr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		if e["type"] == "hero":
 			if e.get("face_down", false):
 				# 英雄行动牌面朝下：显示卡背面（下一个英雄无法从它获得行动）
@@ -722,11 +1016,15 @@ func _refresh_story() -> void:
 				tr.texture = load(UiKit.hero_card_image(e["hero"], e["idx"]))
 		else:
 			# 反派行动牌：面朝下显示行动牌背面（英雄看不到是哪张）；否则显示正面
+			var s6_story: bool = String(Game.state.get("mode", "")) == "s6"
 			if e.get("face_down", false) or e.get("idx", -1) < 0:
-				tr.texture = load(DB.villain(Game.state["villain"])["back"])
+				tr.texture = load("res://assets/cards/s6/action_back.png") if s6_story else load(DB.villain(Game.state["villain"])["back"])
 			else:
-				tr.texture = load(UiKit.villain_action_image(Game.state["villain"], e["idx"]))
+				tr.texture = load("res://assets/cards/s6/action_%02d.png" % (int(e["idx"]) + 1)) if s6_story else load(UiKit.villain_action_image(Game.state["villain"], e["idx"]))
 		_bind_zoom(tr)
+		# 泽莫男爵（裁定⑥）：被危机指示物盖住的行动符号，直接把小危机指示物图标画在这张卡上
+		if e["type"] == "hero" and not e.get("face_down", false) and (e.get("covered", []) as Array).size() > 0:
+			_add_story_covered_marks(tr, e, e["covered"])
 		_story_box.add_child(tr)
 	# 故事情节在下一帧布局后才更新内容宽度；延迟一帧再滚到最右（最新），避免被钳制后回升
 	if is_instance_valid(_story_scroll):
@@ -735,6 +1033,31 @@ func _refresh_story() -> void:
 func _scroll_story_to_latest() -> void:
 	await get_tree().process_frame
 	_story_scroll.scroll_horizontal = _story_scroll.get_h_scroll_bar().max_value
+
+## 泽莫男爵（裁定⑥）：在故事情节卡的"被危机指示物盖住"的行动符号位置上，画一个小危机指示物图标。
+## 位置按卡面实测推导（英雄行动卡为竖版卡）：
+##   · 底部行动符号带中心在卡高的 85% 处（卡图 853×1198 / 显示 46×64 同比例）；
+##   · n 个符号以卡宽中心对称、间距 30% 卡宽（实测：1 个符号→正中；2 个→0.35 / 0.65 卡宽）。
+## 卡框固定为 custom_minimum_size（_refresh_story 里已把 TextureRect 收成卡图大小），
+## 因此图标坐标可直接以卡图左上角为原点。
+func _add_story_covered_marks(tr: TextureRect, entry: Dictionary, covered: Array) -> void:
+	var total: int = (DB.hero_cards(String(entry["hero"]))[int(entry["idx"])]["symbols"] as Array).size()
+	var n: int = maxi(total, 1)
+	var w: float = tr.custom_minimum_size.x
+	var h: float = tr.custom_minimum_size.y
+	var icon: float = 8.0
+	for c in covered:
+		var k: int = int(c)
+		var cx: float = w * 0.5 + (float(k) - float(n - 1) * 0.5) * (w * 0.30)
+		var cy: float = h * 0.85
+		var mark := TextureRect.new()
+		mark.texture = _icon_crisis
+		mark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		mark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		mark.size = Vector2(icon, icon)
+		mark.position = Vector2(cx - icon * 0.5, cy - icon * 0.5)
+		tr.add_child(mark)
 
 func _refresh_hand() -> void:
 	_clear_children(_hand_box)
@@ -748,14 +1071,33 @@ func _refresh_hand() -> void:
 		_hand_label.text = ""
 		return
 	var cur_hid: String = Game.current_hero_id()
-	# 新英雄回合开始时，预览自动回到当前行动英雄
-	if phase == "hero_play" and _peek_hero != "" and _peek_hero != cur_hid:
+	# 联机（bug2）：手牌区固定显示"我自己的英雄"，不是当前行动英雄。
+	# 但若当前英雄的玩家退出了、由房主代管（bug3），房主这边要显示那个英雄的手牌，操作才一致。
+	if Net.active and Net.controlling_hero() != "":
+		cur_hid = Net.controlling_hero()
+	# 新英雄回合（含抽牌阶段）开始时，预览自动回到当前行动英雄
+	if (phase == "hero_play" or phase == "hero_draw") and _peek_hero != "" and _peek_hero != cur_hid:
 		_peek_hero = ""
 	var hid: String = cur_hid
 	if _peek_hero != "" and Game.state["heroes"].has(_peek_hero):
 		hid = _peek_hero
 	var h: Dictionary = Game.state["heroes"][hid]
+	hand_hero_id = hid          # 供测试/联机核对：手牌区当前显示的是谁的牌
 	var previewing: bool = hid != cur_hid
+	# —— 抽牌翻牌动画：检测本次刷新相对上次新抽入展示手牌（非 setup / 非预览 / 非自动时播放）——
+	var disp_ctx := ""
+	var combos: Array = []
+	if shield:
+		disp_ctx = "shield"
+		for cc in Game.state["shield_hand"]:
+			combos.append("%s/%d" % [cc["hero"], int(cc["idx"])])
+	else:
+		disp_ctx = "h:" + hid
+		for ci in h["hand"]:
+			combos.append("%d" % int(ci))
+	var newly: Array = []
+	if not Game.autopilot and not previewing and phase != "setup":
+		newly = _diff_draw_new(disp_ctx, combos)
 	if shield:
 		# 神盾局：显示共享手牌（每张标注所属英雄），牌堆=共享牌组
 		var shield_hand: Array = Game.state["shield_hand"]
@@ -796,6 +1138,7 @@ func _refresh_hand() -> void:
 			vb.add_child(lb)
 			_token_info_box.add_child(vb)
 		var playable_shield := phase == "hero_play"
+		var s_nodes: Array = []
 		for i in range(shield_hand.size()):
 			var card: Dictionary = shield_hand[i]
 			var box := Control.new()
@@ -808,6 +1151,7 @@ func _refresh_hand() -> void:
 			tr.texture = load(UiKit.hero_card_image(card["hero"], card["idx"]))
 			tr.position = Vector2(3, 0)
 			_bind_zoom(tr)
+			_bind_hand_card_anim(tr)
 			if playable_shield:
 				tr.gui_input.connect(_on_hand_card_input.bind(i, tr))
 			tr.mouse_filter = Control.MOUSE_FILTER_STOP if playable_shield else Control.MOUSE_FILTER_PASS
@@ -819,6 +1163,13 @@ func _refresh_hand() -> void:
 			tag.custom_minimum_size = Vector2(30, 16)
 			box.add_child(tag)
 			_hand_box.add_child(box)
+			s_nodes.append(tr)
+		if newly.size() > 0:
+			_flip_drawn_cards(shield_hand, combos, newly, s_nodes,
+				func(card): return load(DB.hero_back(card["hero"])),
+				func(card): return load(UiKit.hero_card_image(card["hero"], int(card["idx"]))))
+		_hand_disp_ctx = disp_ctx
+		_hand_disp_combos = combos
 		return
 	_hand_label.text = "手牌：%s（%d 张）%s" % [DB.hero_name(hid), h["hand"].size(), "— 预览" if previewing else ""]
 	_hand_label.add_theme_color_override("font_color", DB.hero_color(hid))
@@ -838,6 +1189,19 @@ func _refresh_hand() -> void:
 	dk.position = Vector2(0, 30)
 	dk.custom_minimum_size = Vector2(36, 20)
 	_deck_info.add_child(dk)
+	# 叛徒模式：牌堆旁放一张"身份牌背面"，点击可随时（热座自己）查看该英雄的真实身份
+	if Game.state.get("challenge", "") == "traitor" and is_instance_valid(_popup):
+		var idt := TextureRect.new()
+		idt.texture = load("res://assets/cards/modes/traitor/back.jpg")
+		idt.custom_minimum_size = Vector2(44, 60)
+		idt.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		idt.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		idt.position = Vector2(46, 0)
+		idt.mouse_filter = Control.MOUSE_FILTER_STOP
+		idt.gui_input.connect(func(ev: InputEvent):
+			if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+				_popup.show_identity(hid, Game.state["loyalty"].get(hid, "") == "traitor", true))
+		_deck_info.add_child(idt)
 	# 手牌区右侧：该英雄拥有的行动指示物数量
 	_clear_children(_token_info_box)
 	var tk: Dictionary = h["tokens"]
@@ -857,6 +1221,23 @@ func _refresh_hand() -> void:
 		var lb := UiKit.label("×%d" % int(tk[tk_keys[i]]), 15, Color(0.95, 0.9, 0.7))
 		vb.add_child(lb)
 		_token_info_box.add_child(vb)
+	# 叛徒模式：显示该英雄的"不信任指示物"数量
+	if Game.state.get("challenge", "") == "traitor":
+		var dist: int = int(h.get("distrust", 0))
+		if dist > 0:
+			var dvb := HBoxContainer.new()
+			dvb.add_theme_constant_override("separation", 3)
+			dvb.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var dic := TextureRect.new()
+			dic.custom_minimum_size = Vector2(22, 22)
+			dic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			dic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			dic.texture = load("res://assets/tokens/distrust_token.png")
+			dic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			dvb.add_child(dic)
+			var dlb := UiKit.label("×%d" % dist, 15, Color(0.95, 0.8, 0.9))
+			dvb.add_child(dlb)
+			_token_info_box.add_child(dvb)
 	var playable := phase == "hero_play" and not previewing
 	# 乌木侯控制：随机出牌（暗色遮罩 + 居中"随机出牌"按钮），玩家不可逐张选
 	var controlled: bool = phase == "hero_play" and Game.state.get("random_play", false) and not Game.state.get("iw_mind_active", false) and not previewing
@@ -870,14 +1251,84 @@ func _refresh_hand() -> void:
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		tr.texture = load(UiKit.hero_card_image(hid, card_idx))
 		_bind_zoom(tr)
+		_bind_hand_card_anim(tr)
 		if playable and not controlled:
 			tr.gui_input.connect(_on_hand_card_input.bind(i, tr))
 		tr.mouse_filter = Control.MOUSE_FILTER_STOP if (playable and not controlled) else Control.MOUSE_FILTER_PASS
 		_hand_box.add_child(tr)
+	if newly.size() > 0:
+		var n_nodes: Array = []
+		for i in range(combos.size()):
+			n_nodes.append(_hand_box.get_child(i))
+		_flip_drawn_cards(h["hand"], combos, newly, n_nodes,
+			func(_ci): return load(DB.hero_back(hid)),
+			func(ci): return load(UiKit.hero_card_image(hid, int(ci))))
+	_hand_disp_ctx = disp_ctx
+	_hand_disp_combos = combos
 
 func _on_hand_card_input(event: InputEvent, hand_idx: int, tr: TextureRect) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		Game.play_card(hand_idx)
+
+# ================================================================ 抽牌翻牌动画
+
+## 与上次刷新同上下文时，找出本次新出现（被抽入）的手牌组合；上下文切换/首次显示返回空
+func _diff_draw_new(ctx: String, combos: Array) -> Array:
+	if _hand_disp_ctx == "" or ctx != _hand_disp_ctx:
+		return []
+	var newly: Array = []
+	for cmb in combos:
+		if not _hand_disp_combos.has(cmb):
+			newly.append(cmb)
+	return newly
+
+## 对新抽入的每张卡播放"背面→正面"翻牌动画：直接翻转那张落位的手牌卡本体
+## （仅 x 轴翻面，尺寸不变不放大）；纯视觉、不阻塞、多张依次播放。
+func _flip_drawn_cards(entries: Array, combos: Array, newly: Array, nodes: Array,
+		back_for: Callable, face_for: Callable) -> void:
+	var order := 0
+	for i in range(entries.size()):
+		if not newly.has(combos[i]):
+			continue
+		var anchor: TextureRect = nodes[i]
+		if not is_instance_valid(anchor):
+			continue
+		var back_tex: Texture2D = back_for.call(entries[i])
+		var face_tex: Texture2D = face_for.call(entries[i])
+		if back_tex == null or face_tex == null:
+			continue
+		_play_card_flip(anchor, back_tex, face_tex, 0.12 + order * 0.35)
+		order += 1
+
+func _play_card_flip(anchor: TextureRect, back_tex: Texture2D, face_tex: Texture2D, delay: float) -> void:
+	# 直接把这张真卡翻面：仅 x 轴翻转（宽 1→0.02→1，y 与整体尺寸完全不变，绝不放大）
+	# 等一帧让容器完成本次布局（拿到落位/尺寸）再开始翻
+	if _hover_card == anchor:
+		_hover_card = null
+		if is_instance_valid(_hand_tween):
+			_hand_tween.kill()
+	var orig_filter := anchor.mouse_filter
+	anchor.texture = back_tex
+	anchor.mouse_filter = Control.MOUSE_FILTER_IGNORE   # 翻牌期间不可点击/不可悬停
+	anchor.scale = Vector2.ONE
+	anchor.rotation = 0.0
+	await get_tree().process_frame
+	if not is_instance_valid(anchor):
+		return
+	anchor.pivot_offset = anchor.size * 0.5
+	var tw := anchor.create_tween()
+	tw.tween_interval(delay)
+	tw.tween_property(anchor, "scale:x", 0.02, 0.12)
+	tw.tween_callback(func():
+		if is_instance_valid(anchor):
+			anchor.texture = face_tex)
+	tw.tween_property(anchor, "scale:x", 1.0, 0.12)
+	tw.tween_interval(0.1)
+	tw.tween_callback(func():
+		if is_instance_valid(anchor):
+			anchor.mouse_filter = orig_filter
+			anchor.scale = Vector2.ONE
+			anchor.rotation = 0.0)
 
 ## 乌木侯控制：点击"随机出牌"按钮 → 随机打出一张手牌
 func _on_random_play_pressed() -> void:
@@ -888,20 +1339,51 @@ func _bind_zoom(tr: TextureRect) -> void:
 	tr.mouse_entered.connect(_zoom_show.bind(tr))
 	tr.mouse_exited.connect(_zoom_hide)
 
+## 手牌卡悬停动画：卡片本体"果冻"放大 + 缓缓左右摇晃（纯视觉，不改游戏逻辑）
+func _bind_hand_card_anim(tr: TextureRect) -> void:
+	tr.pivot_offset = Vector2(tr.custom_minimum_size.x / 2.0, tr.custom_minimum_size.y / 2.0)
+	tr.mouse_entered.connect(_hand_card_hover.bind(tr))
+	tr.mouse_exited.connect(_hand_card_unhover.bind(tr))
+
+func _hand_card_hover(tr: TextureRect) -> void:
+	if is_instance_valid(_hand_tween):
+		_hand_tween.kill()
+	_hover_card = tr
+	# 果冻放大：scale.x/y 先冲到 1.18 再回弹到 1.12（只做一次）
+	_hand_tween = create_tween()
+	_hand_tween.tween_property(tr, "scale", Vector2(1.18, 1.18), 0.09)
+	_hand_tween.tween_property(tr, "scale", Vector2(1.12, 1.12), 0.07)
+	# 缓缓左右摇晃：无限循环（用 set_loops，rotation 左→右→左… 一直往复直到鼠标离开）
+	_hand_tween.tween_property(tr, "rotation", 0.05, 0.20)
+	_hand_tween.tween_property(tr, "rotation", -0.05, 0.20)
+	_hand_tween.set_loops()
+
+func _hand_card_unhover(tr: TextureRect) -> void:
+	if _hover_card == tr:
+		_hover_card = null
+	if is_instance_valid(_hand_tween):
+		_hand_tween.kill()
+	# 立即复位到原状（不依赖 tween 时序，保证离开一定恢复）
+	tr.scale = Vector2.ONE
+	tr.rotation = 0.0
+
 func _zoom_show(tr: TextureRect) -> void:
 	if tr.texture == null:
 		return
 	var tw: float = tr.texture.get_width()
 	var th: float = tr.texture.get_height()
 	var scale_f := 2.6
-	if th * scale_f > 460.0:
-		scale_f = 460.0 / th
+	var max_h := 460.0
+	# 大图/方图（邪恶六人组仪表板 1100×1100 之类）给更大的预览，最多到 780px
+	if minf(tw, th) >= 800.0:
+		max_h = 780.0
+	if th * scale_f > max_h:
+		scale_f = max_h / th
 	_zoom_panel.texture = tr.texture
 	var zs := Vector2(tw * scale_f, th * scale_f)
-	_zoom_panel.custom_minimum_size = zs
-	_zoom_panel.size = zs
+	_zoom_base_size = zs          # 基准尺寸（滚轮在此基础上放大/缩小）
 	_zoom_panel.visible = true
-	_update_zoom_position()
+	_apply_zoom_size()            # 统一走这里：带"不超出屏幕"的上限
 	# 放大预览在独立 CanvasLayer(50) 中，无需手动置顶
 
 ## 放大图位置：鼠标右下方 +24，超出屏幕自动翻转贴近鼠标
@@ -975,6 +1457,41 @@ func _refresh_actions() -> void:
 			var ebtn := UiKit.button("卡牌效果", Color(0.6, 0.5, 0.2))
 			ebtn.pressed.connect(Game.trigger_effect)
 			_action_box.add_child(ebtn)
+		# 神秘客：可花费 1 个任意行动翻开一张背面朝上的威胁卡
+		if Game.state.get("villain", "") == "mysterio":
+			var any_fd := false
+			for _fl in range(Game.LOCATION_COUNT):
+				var _ft: Variant = Game.state["locations"][_fl]["threat"]
+				if _ft != null and _ft.get("_face_down", false):
+					any_fd = true
+					break
+			if any_fd:
+				var rbtn := UiKit.button("翻开背面威胁卡", Color(0.4, 0.45, 0.7))
+				rbtn.pressed.connect(Game.reveal_threat_choice)
+				_action_box.add_child(rbtn)
+		# 秘密身份挑战：可花费 1 个任意行动把任意记者指示物挪到相邻地点（不产生曝光）
+		if Game.state.get("challenge", "") == "secretid":
+			var has_reporter := false
+			for _rl in range(Game.LOCATION_COUNT):
+				if Game.state["locations"][_rl].get("reporter", false):
+					has_reporter = true
+					break
+			if has_reporter:
+				var mbtn := UiKit.button("移动记者指示物", Color(0.5, 0.4, 0.25))
+				mbtn.icon = load("res://assets/tokens/reporter_token.png")
+				mbtn.add_theme_constant_override("icon_max_width", 26)
+				mbtn.pressed.connect(Game.move_reporter_choice)
+				_action_box.add_child(mbtn)
+		# 秘密身份挑战（身份已暴露）/ 摩多克·心灵异能（威胁卡）：提醒本回合必须背面出牌
+		var cur_hid: String = Game.state["hero_ids"][Game.state["current_hero"]]
+		if String(Game.state.get("forced_face_down_hero", "")) == cur_hid:
+			var hint_text := "🎭 身份已暴露：本回合请直接点手牌（会背面打出，无效果但仍继承上一张卡符号）"
+			if Game.state.get("challenge", "") != "secretid":
+				hint_text = "🧠 心灵异能：本回合请直接点手牌（会背面打出，不会从自己的牌获得行动）"
+			var hint := UiKit.label(hint_text, 16, Color(1, 0.7, 0.6))
+			hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			hint.custom_minimum_size = Vector2(360, 0)
+			_action_box.add_child(hint)
 		var end := UiKit.button("结束行动", Color(0.5, 0.3, 0.3))
 		end.pressed.connect(Game.end_actions)
 		_action_box.add_child(end)
@@ -982,6 +1499,14 @@ func _refresh_actions() -> void:
 			var ubtn := UiKit.button("↩ 撤回", Color(0.45, 0.45, 0.3))
 			ubtn.pressed.connect(Game.undo_last)
 			_action_box.add_child(ubtn)
+	elif phase == "hero_play":
+		# 叛徒模式：还有不信任指示物时，可"背面出牌"丢弃（无效果，仅继承上一张牌符号）
+		if Game.state.get("challenge", "") == "traitor":
+			var fid: String = Game.state["hero_ids"][Game.state["current_hero"]]
+			if Game.state["heroes"][fid].get("distrust", 0) > 0:
+				var fbtn := UiKit.button("背面出牌（弃不信任）", Color(0.55, 0.35, 0.6))
+				fbtn.pressed.connect(Game.play_face_down_choice)
+				_action_box.add_child(fbtn)
 	elif phase == "hero_end":
 		# 行动用完后自动结束回合，不再提供"结束回合"按钮
 		if Game.undo_enabled:
@@ -1024,6 +1549,11 @@ func _refresh_energy_cards(st: Dictionary) -> void:
 	var cards: Array = [table_e, hidden_e]
 	for eidx in cards:
 		if eidx < 0 or eidx >= DB.energy_cards.size():
+			# 联机客户端：未解锁的那张只拿到"有这么一张"的标记（不告诉是哪张），
+			# 但必须画出一个未解锁卡位，否则别人屏幕上这张卡整个消失（用户报的 bug）
+			if eidx == hidden_e and bool(st.get("has_hidden_energy", false)):
+				var lock_lb := UiKit.label("🂠 未解锁", 20, Color(0.85, 0.85, 0.95))
+				_energy_box.add_child(lock_lb)
 			continue
 		var e: Dictionary = DB.energy_cards[eidx]
 		var can_fill: bool = Game.energy_can_fill(eidx)
@@ -1062,6 +1592,10 @@ func _refresh_energy_cards(st: Dictionary) -> void:
 		var sx0 := center_x - grid_wh / 2.0
 		var sy0 := center_y - grid_wh / 2.0
 		var filled_slots: Array = Game.energy_filled_slots(eidx)
+		# 再兜一层：无论数据来自主机还是 JSON 快照，都按 int 比较（否则客户端图标不亮）
+		var filled_int: Array = []
+		for fs in filled_slots:
+			filled_int.append(int(fs))
 		for si in range(mini(need.size(), 4)):
 			var sym: String = need[si]
 			# 每格中心按 38px 网格计算；威胁槽以该格中心为锚缩小显示
@@ -1079,7 +1613,7 @@ func _refresh_energy_cards(st: Dictionary) -> void:
 			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 			tr.position = Vector2(cx - sz / 2.0, cy - sz / 2.0)
-			tr.modulate = Color(1, 1, 1, 1.0) if filled_slots.has(si) else Color(1, 1, 1, 0.2)
+			tr.modulate = Color(1, 1, 1, 1.0) if filled_int.has(si) else Color(1, 1, 1, 0.2)
 			tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			box.add_child(tr)
 		# 名称小字（卡图下方居中）
@@ -1127,6 +1661,9 @@ func _make_energy_card_simple(eidx: int) -> Control:
 
 ## Bug4：右侧显示"已完成"的能量卡图标（只显示之前完成的；当局进行中/未完成的不显示）
 func _refresh_energy_done(st: Dictionary) -> void:
+	# 用户要求：无限战争的已完成能量卡不需要在右侧再显示一块「已完成」区
+	_energy_done_box.visible = false
+	return
 	_clear_children(_energy_done_box)
 	if st.get("final_battle", false):
 		_energy_done_box.visible = false
@@ -1212,8 +1749,10 @@ func _refresh_endangered_side() -> void:
 	if not end.has("setup_done"):
 		_endangered_side_box.visible = false
 		return
-	# 只显示当前行动英雄自己的濒危指示物（玩家据此知道该英雄守护哪个地点）
-	var cur: String = Game.current_hero_id()
+	# 只显示"和手牌区同一个英雄"的濒危指示物：
+	# 单机是当前行动英雄；联机是"我能操作的英雄"（自己 / 房主代管的已退出玩家）——
+	# 这样指示物永远贴着自己那副牌，别人守护哪个地点不会显示在我这里。
+	var cur: String = hand_hero_id if hand_hero_id != "" else Game.current_hero_id()
 	if cur != "" and end.has(cur):
 		var idx: int = st["hero_ids"].find(cur)
 		var num: int = idx + 1
@@ -1319,6 +1858,9 @@ func _refresh_phase() -> void:
 	# Bug8：终局之战也要显示收集的能量卡（non-final 显示当前局；final 显示收集的能量卡）
 	_energy_box.visible = is_iw
 	_update_gauntlet()
+	# 裁定③（新口径）：阿戈摩托之球 → 反派牌堆右侧贴"牌堆顶那张行动牌"的卡图（悬停放大）。
+	# 放在所有模式之前：阿戈摩托之球是基础盒英雄卡，基础/联机/无限战争局都可能用到。
+	var _orb_card_shown: bool = _refresh_villain_top_card(st)
 	if is_iw:
 		var c: Variant = st.get("campaign", null)
 		if c is Dictionary and not c.is_empty():
@@ -1340,9 +1882,20 @@ func _refresh_phase() -> void:
 		_refresh_energy_done(st)
 		# Bug2：反派牌堆顶是无限宝石时，在反派牌堆右侧提示
 		var hint := ""
-		var deck_top: Variant = st.get("master_deck", []).front() if st.get("master_deck", []).size() > 0 else null
-		if not st.get("final_battle", false) and deck_top is Dictionary and deck_top.has("stone"):
+		# 客户端拿不到牌堆内容（只给张数），所以用主机下发的"牌堆顶是不是宝石"标记，
+		# 保证联机时所有人看到的宝石提示一致
+		var top_is_stone: bool = bool(st.get("master_deck_top_is_stone", false))
+		var md_top: Array = st.get("master_deck", [])
+		if md_top.size() > 0:
+			top_is_stone = md_top.front() is Dictionary and (md_top.front() as Dictionary).has("stone")
+		if not st.get("final_battle", false) and top_is_stone:
 			hint = "灭霸即将收集到宝石"
+		# 裁定③：阿戈摩托之球生效期间，把反派牌堆顶那张公开给所有人看（牌不动、不结算）。
+		# 现在改成**贴卡图**（`_villain_top_card`）；只有卡图渲染失败（缺图）时才退回文字。
+		if bool(st.get("villain_top_public", false)) and not _orb_card_shown:
+			var _tidx: int = _villain_top_idx_for(st)
+			if _tidx >= 0:
+				hint = "🔮 牌堆顶公开：%s" % Game.villain_action_desc(_tidx)
 		_villain_deck_hint.text = hint
 		_villain_deck_hint.visible = hint != ""
 	else:
@@ -1356,6 +1909,12 @@ func _refresh_phase() -> void:
 			_turn_label.text = ""
 		"villain":
 			_phase_label.text = "🦹 反派回合 #%d" % st["turn_count"]
+		"hero_draw":
+			# 抽牌阶段：只展示抽牌，不可操作手牌/行动（阶段结束时自动进入可操作的 hero_play）
+			if shield:
+				_phase_label.text = "🦸 神盾局回合 — 抽牌阶段…"
+			else:
+				_phase_label.text = "🦸 %s — 抽牌阶段…" % DB.hero_name(Game.current_hero_id())
 		"hero_play":
 			if shield:
 				_phase_label.text = "🦸 神盾局回合 — 打出一张手牌"
@@ -1383,6 +1942,13 @@ func _refresh_phase() -> void:
 
 ## 点击开始游戏：进入第一个反派回合（官方规则：游戏从反派回合开始）
 func _on_start_pressed() -> void:
+	# 叛徒模式：开局前让每位玩家(英雄)秘密查看自己的身份牌（热座逐个）
+	if Game.state.get("challenge", "") == "traitor":
+		for hid in Game.state["hero_ids"]:
+			if not Game.state["loyalty"].has(hid):
+				continue
+			_popup.show_identity(hid, Game.state["loyalty"][hid] == "traitor")
+			await Events.identity_confirmed
 	await Game.start_game()
 
 ## 角色图标层（英雄/反派所在地指示）
@@ -1512,7 +2078,15 @@ func _rebuild_icons(st: Dictionary) -> void:
 		var ang: float = TAU * i / Game.LOCATION_COUNT - PI / 2
 		var pos := LOC_CENTER + Vector2(cos(ang), sin(ang)) * LOC_RADIUS
 		var icons: Array = []  # {tex, badge, badge_color, role}
-		if st["villain_pos"] == i:
+		if String(st.get("mode", "")) == "s6":
+			# 邪恶六人组：6 个反派各自在自己的地点上（同地点多个则并排）
+			var s6v: Dictionary = st.get("s6", {}).get("vills", {})
+			for svid in DB.s6["order"]:
+				var vv: Dictionary = s6v.get(svid, {})
+				if vv.is_empty() or bool(vv.get("defeated", false)) or int(vv.get("pos", -1)) != i:
+					continue
+				icons.append({"tex": _villain_icons.get(String(svid)), "badge": "", "bc": Color(1, 0.8, 0.4), "role": "s6villain", "small": true, "vid": String(svid)})
+		elif st["villain_pos"] == i:
 			icons.append({"tex": _villain_icons.get(st["villain"]), "badge": "", "bc": Color.WHITE, "role": "villain"})
 		for hid in st["hero_ids"]:
 			var h: Dictionary = st["heroes"][hid]
@@ -1529,35 +2103,82 @@ func _rebuild_icons(st: Dictionary) -> void:
 				"ko_count": int(h.get("ko_count", 0)),
 				"role": hid,
 			})
+		# 秘密身份挑战：记者指示物固定在**地点卡左上角**（无论该地点有没有英雄/反派图标都要画）
+		if st.get("challenge", "") == "secretid" and st["locations"][i].get("reporter", false):
+			var r_icon := TextureRect.new()
+			r_icon.texture = load("res://assets/tokens/reporter_token.png")
+			r_icon.custom_minimum_size = Vector2(30, 30)
+			r_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			r_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			r_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			r_icon.position = pos - Vector2(LOC_CARD_SIZE / 2.0, LOC_CARD_SIZE / 2.0) + Vector2(4, 4)
+			add_child(r_icon)
+			_icon_nodes.append(r_icon)
 		if icons.size() == 0:
 			continue
-		# 横向排布（叠放在地点卡中央：槽位下方、威胁卡上方，不遮挡民/暴指示物）
-		var icon_h := 56.0
-		var gap := 3.0
+		# 横向排布：英雄与反派**各自成排、各自对齐地点卡中心**（两排不共用横向游标）
+		var s6_mode2: bool = String(st.get("mode", "")) == "s6"
+		var ordered: Array = []
+		var targets: Array = []
+		var heights: Array = []
 		var widths: Array = []
-		var total_w := 0.0
-		for ic in icons:
-			var tex: Texture2D = ic["tex"]
-			var tw: float = 56.0
-			if tex != null and tex.get_height() > 0:
-				tw = icon_h * tex.get_width() / float(tex.get_height())
-			widths.append(tw)
-			total_w += tw + gap
-		total_w -= gap
-		var x := pos.x - total_w / 2.0
-		var y := pos.y - LOC_CARD_SIZE / 2.0 + 87.0
+		var gap := 3.0
+		var groups: Array = []
+		if s6_mode2:
+			var hier: Array = icons.filter(func(x): return String(x.get("role", "")) != "s6villain")
+			var vlist: Array = icons.filter(func(x): return String(x.get("role", "")) == "s6villain")
+			if hier.size() > 0:
+				groups.append({"list": hier, "y": pos.y - LOC_CARD_SIZE / 2.0 + 87.0, "h": 56.0})
+			if vlist.size() > 0:
+				var vh: float = 56.0 if vlist.size() <= 2 else (44.0 if vlist.size() == 3 else 36.0)
+				groups.append({"list": vlist, "y": pos.y - LOC_CARD_SIZE / 2.0 + LOC_CARD_SIZE * 0.72, "h": vh})
+		else:
+			groups.append({"list": icons, "y": pos.y - LOC_CARD_SIZE / 2.0 + 87.0, "h": 56.0})
+		for grp in groups:
+			var glist: Array = grp["list"]
+			var gh: float = float(grp["h"])
+			var gy: float = float(grp["y"])
+			var gw: Array = []
+			var tot := 0.0
+			for ic in glist:
+				var tex0: Texture2D = ic["tex"]
+				var tw0: float = gh
+				if tex0 != null and tex0.get_height() > 0:
+					tw0 = gh * tex0.get_width() / float(tex0.get_height())
+				gw.append(tw0)
+				tot += tw0 + gap
+			tot -= gap
+			var gx: float = pos.x - tot / 2.0
+			for gi in range(glist.size()):
+				ordered.append(glist[gi])
+				widths.append(gw[gi])
+				heights.append(gh)
+				targets.append(Vector2(gx, gy))
+				gx += gw[gi] + gap
+		icons = ordered
 		for k in range(icons.size()):
 			var ic: Dictionary = icons[k]
 			var box := Control.new()
 			box.set_meta("role", ic.get("role", ""))
-			box.position = Vector2(x, y)
-			box.custom_minimum_size = Vector2(widths[k], icon_h)
+			var target_pos: Vector2 = targets[k]
+			# 邪恶六人组：反派换地点时从旧位置滑到新位置（移动动画）
+			var anim_from := Vector2.ZERO
+			var do_anim := false
+			if String(st.get("mode", "")) == "s6" and String(ic.get("role", "")) == "s6villain":
+				var svid: String = String(ic.get("vid", ""))
+				if _s6_icon_prev.has(svid):
+					anim_from = _s6_icon_prev[svid]
+					do_anim = anim_from.distance_to(target_pos) > 2.0
+				_s6_icon_prev[svid] = target_pos
+			box.position = target_pos if not do_anim else anim_from
+			var this_h: float = heights[k]
+			box.custom_minimum_size = Vector2(widths[k], this_h)
 			add_child(box)
 			# 黑色描边边框（与地图画面区分）
 			var border := ColorRect.new()
 			border.color = Color(0, 0, 0, 1)
 			border.position = Vector2(-2, -2)
-			border.size = Vector2(widths[k] + 4, icon_h + 4)
+			border.size = Vector2(widths[k] + 4, this_h + 4)
 			border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			box.add_child(border)
 			var tr := TextureRect.new()
@@ -1567,21 +2188,22 @@ func _rebuild_icons(st: Dictionary) -> void:
 			tr.set_anchors_preset(Control.PRESET_FULL_RECT)
 			tr.modulate = Color(0.55, 0.55, 0.55) if ic.get("ko", false) else Color.WHITE
 			box.add_child(tr)
-			# 罗南 KO 指示物：只要该英雄累计过 KO 指示物（ko_count>0），就固定在英雄图标左下角显示
+			# 罗南/亡刃将军 KO 指示物：只要该英雄累计过 KO 指示物（ko_count>0），就固定在英雄图标左下角显示
 			# KO 图标 + 数量（不限当前是否 KO；不与右下角危机徽章重叠）
-			if st.get("villain", "") == "ronan" and int(ic.get("ko_count", 0)) > 0:
+			var vv: String = st.get("villain", "")
+			if (vv == "ronan" or vv == "corvus") and int(ic.get("ko_count", 0)) > 0:
 				var ko_icon := TextureRect.new()
 				ko_icon.texture = load("res://assets/cards/villains/ronan/ko_token.png")
 				ko_icon.custom_minimum_size = Vector2(20, 20)
 				ko_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 				ko_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 				ko_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				ko_icon.position = Vector2(0, icon_h - 22)
+				ko_icon.position = Vector2(0, this_h - 22)
 				box.add_child(ko_icon)
 				var ko_num := UiKit.label("%d" % int(ic.get("ko_count", 0)), 12, Color(1, 0.4, 0.4))
 				ko_num.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 				ko_num.add_theme_constant_override("outline_size", 3)
-				ko_num.position = Vector2(18, icon_h - 20)
+				ko_num.position = Vector2(18, this_h - 20)
 				ko_num.custom_minimum_size = Vector2(18, 16)
 				ko_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 				box.add_child(ko_num)
@@ -1589,22 +2211,252 @@ func _rebuild_icons(st: Dictionary) -> void:
 				var lb: Label = UiKit.label(ic["badge"], 14, ic["bc"])
 				lb.add_theme_color_override("font_outline_color", Color(0, 0, 0))
 				lb.add_theme_constant_override("outline_size", 4)
-				lb.position = Vector2(widths[k] - 30, icon_h - 20)
+				lb.position = Vector2(widths[k] - 30, this_h - 20)
 				lb.custom_minimum_size = Vector2(28, 18)
 				lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 				box.add_child(lb)
+			# 秘密身份挑战：曝光指示物数量固定在英雄图标的**上半部分**（左上角，与左下 KO、右下危机徽章不重叠）
+			if st.get("challenge", "") == "secretid" and st["heroes"].has(String(ic.get("role", ""))) and int(st["heroes"][ic["role"]].get("exposure", 0)) > 0:
+				var expo: int = int(st["heroes"][ic["role"]]["exposure"])
+				var e_icon := TextureRect.new()
+				e_icon.texture = load("res://assets/tokens/exposure_token.png")
+				e_icon.custom_minimum_size = Vector2(28, 28)
+				e_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				e_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				e_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				e_icon.position = Vector2(0, -3)
+				box.add_child(e_icon)
+				var e_num := UiKit.label("%d" % expo, 16, Color(1, 0.85, 0.35))
+				e_num.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+				e_num.add_theme_constant_override("outline_size", 5)
+				e_num.position = Vector2(26, -3)
+				e_num.custom_minimum_size = Vector2(22, 20)
+				e_num.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+				box.add_child(e_num)
 			_icon_nodes.append(box)
-			x += widths[k] + gap
+			if do_anim:
+				var tw2 := create_tween()
+				tw2.tween_property(box, "position", target_pos, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			pass
+
+# ================================================================ 邪恶六人组模式 UI
+
+var _s6_nodes: Array = []          # s6 专用节点（每次刷新重建）
+var _s6_center_root: Control = null
+var _villain_bg: Panel = null      # 左上角反派信息框（s6 模式在其上加挂仪表板等）
+var _s6_icon_prev := {}            # s6：每个反派图标上一次的位置（用于移动动画）
+var _zoom_base_size := Vector2.ZERO   # 放大预览的基准尺寸（滚轮倍率在此基础上生效）
+var _zoom_mul := 1.0                  # 放大预览的滚轮倍率（0.25~4.0）
+
+## 左侧：六边形仪表板（随机中心旋转）+ 右侧 6 个反派生命值列表 + 下方秃鹫身上的民/暴
+func _refresh_s6_panel(st: Dictionary) -> void:
+	# 单人局的面板/血条/轨道的控件全部隐藏，改用 s6 专用显示
+	_villain_panel.visible = false
+	_fear_bar.visible = false
+	_fear_label.visible = false
+	_hp_label.visible = false
+	for n in _s6_nodes:
+		if is_instance_valid(n):
+			n.queue_free()
+	_s6_nodes.clear()
+	var s: Dictionary = st.get("s6", {})
+	if s.is_empty():
+		return
+	# 单人局的控件全部隐藏（含残留的生命值图标/KO 图标等）
+	_villain_panel.visible = false
+	_fear_bar.visible = false
+	_fear_label.visible = false
+	_hp_label.visible = false
+	_hp_icon.visible = false
+	_ko_icon.visible = false
+	if _goblin_civ_box != null:
+		_goblin_civ_box.visible = false
+	# 面板图（摆正不旋转；用锚点让贴图严格填满 190×190 框）
+	var clip := Control.new()
+	clip.position = Vector2(8, 8)
+	clip.custom_minimum_size = Vector2(250, 250)
+	clip.size = Vector2(250, 250)
+	clip.clip_contents = true
+	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_villain_bg.add_child(clip)
+	_s6_nodes.append(clip)
+	var pan := TextureRect.new()
+	pan.texture = load("res://assets/cards/s6/panel.png")
+	pan.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pan.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pan.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pan.rotation = 0.0                     # 摆正
+	pan.mouse_filter = Control.MOUSE_FILTER_STOP   # 需要接收 mouse_entered（悬停放大）
+	clip.add_child(pan)
+	_bind_zoom(pan)                        # 鼠标停留 → 放大预览（与单人局反派面板一致）
+	# 右侧：每个反派的生命值
+	var hp_box := VBoxContainer.new()
+	hp_box.position = Vector2(266, 12)
+	hp_box.add_theme_constant_override("separation", 6)
+	_villain_bg.add_child(hp_box)
+	_s6_nodes.append(hp_box)
+	for vid in DB.s6["order"]:
+		var v: Dictionary = s["vills"][vid]
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 3)
+		hp_box.add_child(row)
+		# 前缀：已击败 → 奖杯；弱点卡已化解（可受伤）→ 素材生命值图标（不再有锁）；未化解 → 锁
+		if bool(v["defeated"]):
+			row.add_child(UiKit.label("🏆", 12, Color(0.6, 1, 0.6)))
+		elif bool(v["weak_done"]):
+			var hi := TextureRect.new()
+			hi.texture = load("res://assets/tokens/hp_icon.png")
+			hi.custom_minimum_size = Vector2(16, 16)
+			hi.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			hi.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			row.add_child(hi)
+		else:
+			row.add_child(UiKit.label("🔒", 12, Color(1, 1, 1)))
+		row.add_child(UiKit.label("%s %d/%d" % [DB.villain_name(String(vid)), int(v["hp"]), int(v["hp_max"])], 12,
+			Color(0.6, 1, 0.6) if bool(v["defeated"]) else (Color(1, 0.75, 0.75) if bool(v["weak_done"]) else Color(1, 1, 1))))
+	# 生命值列表下方：秃鹫身上的平民 / 暴徒（分两行显示）
+	var vv: Dictionary = s["vills"]["vulture"]
+	var vbox := VBoxContainer.new()
+	vbox.position = Vector2(266, 152)
+	vbox.add_theme_constant_override("separation", 2)
+	_villain_bg.add_child(vbox)
+	_s6_nodes.append(vbox)
+	var vl := UiKit.label("🦅 秃鹫身上", 12, Color(1, 0.9, 0.6))
+	vbox.add_child(vl)
+	for pair in [["civ", int(vv["held_civ"])], ["thug", int(vv["held_thug"])]]:
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 4)
+		vbox.add_child(row)
+		var ic := TextureRect.new()
+		ic.texture = load("res://assets/tokens/%s_token.png" % String(pair[0]))
+		ic.custom_minimum_size = Vector2(20, 20)
+		ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		row.add_child(ic)
+		var nl := UiKit.label("%s x%d" % ["平民" if String(pair[0]) == "civ" else "暴徒", int(pair[1])], 12, Color(1, 1, 1))
+		row.add_child(nl)
+	# 反派行动牌堆（s6 卡背 + 剩余张数）
+	if _villain_deck_icon != null:
+		_villain_deck_icon.texture = load("res://assets/cards/s6/action_back.png")
+		_villain_deck_num.text = "%d" % (s.get("deck", []) as Array).size()
+
+## 中央：6 张弱点卡按面板方向摆成六边形（不遮挡地点；显示 3 个槽位的填充进度）
+func _refresh_s6_center(st: Dictionary) -> void:
+	_hide_s6_center()
+	var s: Dictionary = st.get("s6", {})
+	if s.is_empty():
+		return
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(root)
+	_s6_center_root = root
+	# 面板 6 个方向的顺序与面板一致：左上=克莱文 / 上=沙人 / 右上=电光人 / 左下=神秘客 / 下=章鱼博士 / 右下=秃鹫
+	var dirs := {
+		"kraven": Vector2(-1, -1), "sandman": Vector2(0, -1), "electro": Vector2(1, -1),
+		"mysterio": Vector2(-1, 1), "docock": Vector2(0, 1), "vulture": Vector2(1, 1),
+	}
+	var cw := 130.0
+	var ch := 93.0
+	var radius := 165.0
+	for vid in DB.s6["order"]:
+		var v: Dictionary = s["vills"][vid]
+		var d: Vector2 = dirs[vid]
+		var off: Vector2 = d.normalized() * radius
+		# 四个斜角卡向中心收一点：猎人克莱文/电光人（上排）下移，神秘客/秃鹫（下排）上移
+		if absf(d.x) > 0.1 and absf(d.y) > 0.1:
+			off.y *= 0.70
+		var cpos: Vector2 = LOC_CENTER + off - Vector2(cw / 2, ch / 2)
+		var box := Control.new()
+		box.position = cpos
+		box.custom_minimum_size = Vector2(cw, ch)
+		box.size = Vector2(cw, ch)
+		box.clip_contents = true
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(box)
+		# 用锚点让贴图严格填满整张卡框（否则 TextureRect 会按原始像素尺寸绘制，只露出左上角一小块）
+		var cd := TextureRect.new()
+		cd.texture = load("res://assets/cards/s6/weak_%02d.png" % int(DB.s6["weak"][vid]["img"]))
+		cd.set_anchors_preset(Control.PRESET_FULL_RECT)
+		cd.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		cd.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		cd.modulate = Color(1, 1, 1, 0.35) if bool(v["defeated"]) else (Color(1, 0.85, 0.85) if bool(v["weak_done"]) else Color.WHITE)
+		cd.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(cd)
+		# 3 个槽位进度（与卡面印刷的贴纸对齐）
+		var syms: Array = v["weak_syms"]
+		var filled: Array = v["weak_filled"]
+		var xs := [0.195, 0.501, 0.812]
+		for si in range(3):
+			if si >= syms.size():
+				break
+			var sicon := TextureRect.new()
+			var sym: String = String(syms[si])
+			sicon.texture = load("res://assets/tokens/token_%s.png" % sym)
+			# 填充图标按卡宽等比放大（约 30% 卡宽，正好盖住卡面印刷的符号贴纸）
+			var ssz: float = cw * 0.30
+			sicon.custom_minimum_size = Vector2(ssz, ssz)
+			sicon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			sicon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			sicon.position = Vector2(float(xs[si]) * cw - ssz / 2.0, 0.80 * ch - ssz / 2.0)
+			var done: bool = si < filled.size() and int(filled[si]) == 1
+			sicon.modulate = Color(1, 1, 1, 1.0) if done else Color(1, 1, 1, 0.25)
+			sicon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			box.add_child(sicon)
+		# 名字 + 状态
+		var nl := UiKit.label("%s%s" % [DB.villain_name(String(vid)), "（已击败）" if bool(v["defeated"]) else ("（可受伤）" if bool(v["weak_done"]) else "")], 13,
+			Color(0.6, 1, 0.6) if bool(v["defeated"]) else (Color(1, 0.9, 0.4) if bool(v["weak_done"]) else Color(0.9, 0.9, 0.9)))
+		nl.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		nl.add_theme_constant_override("outline_size", 4)
+		nl.position = Vector2(2, -18)
+		nl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(nl)
+
+func _hide_s6_center() -> void:
+	if is_instance_valid(_s6_center_root):
+		_s6_center_root.queue_free()
+	_s6_center_root = null
 
 # ================================================================ 日志
 
-func _on_log(text: String, color: Color) -> void:
-	var l := UiKit.label(text, 15, color)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(450, 0)
-	_log_box.add_child(l)
-	# 日志在下一帧布局后才更新内容高度；延迟一帧再滚到底，避免滚动条被旧内容钳制后回升
+## 日志一律以 Game.state["log"] 为准（bug3）：
+## 联机时游戏逻辑只在主机跑，客户端收不到 log_line 事件，只有快照里的 state["log"]；
+## 所以两边都改成"把还没显示过的 state["log"] 行补进日志框"，主机与客户端自然完全同步。
+var _log_shown := 0
+var _log_first_text := "\u0000"    # 视图里第一行日志的文字（用来发现"日志源头换了"）
+var _dbg_energy_last := ""         # 联机诊断：上一次打印过的公共能量卡填充状态
+
+func _sync_log() -> void:
+	if _log_box == null:
+		return
+	var logs: Array = Game.state.get("log", [])
+	# 关键：客户端会先自己跑一遍本地 setup，日志第一行（如"本局能量卡：X"）是它自己随机出来的；
+	# 收到主机快照后如果还按"增量追加"，就会一直显示本地那份 → 每个玩家看到的开局日志都不一样。
+	# 所以：行数变少（新局清空）或第一行内容变了（日志本源换了）都整段重建。
+	var first_t := ""
+	if logs.size() > 0 and logs[0] is Dictionary:
+		first_t = String((logs[0] as Dictionary).get("t", ""))
+	if logs.size() < _log_shown or first_t != _log_first_text:
+		_clear_children(_log_box)
+		_log_shown = 0
+	_log_first_text = first_t
+	while _log_shown < logs.size():
+		var e: Dictionary = logs[_log_shown]
+		_log_shown += 1
+		var l := UiKit.label(String(e.get("t", "")), 15, Color(String(e.get("c", "#ffffff"))))
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(450, 0)
+		_log_box.add_child(l)
+	# 只保留最近 300 行，长局不卡
+	while _log_box.get_child_count() > 300:
+		var c: Node = _log_box.get_child(0)
+		_log_box.remove_child(c)
+		c.queue_free()
 	await _scroll_log_to_bottom()
+
+func _on_log(_text: String, _color: Color) -> void:
+	# 内容已经写进 state["log"] 了，这里只负责"补显示"
+	await _sync_log()
 
 func _scroll_log_to_bottom() -> void:
 	await get_tree().process_frame

@@ -23,7 +23,7 @@ func _check(name: String, ok: bool, detail: String) -> void:
 		print("PASS: %s — %s" % [name, detail])
 
 func _test_data_load() -> void:
-	_check("英雄总数=20", DB.heroes.size() == 20, "size=%d" % DB.heroes.size())
+	_check("英雄总数=57（第一季众筹两批24位）", DB.heroes.size() == 57, "size=%d" % DB.heroes.size())
 	for h in ["spiderman", "miles", "gwenspider", "spiderpig"]:
 		_check("英雄 %s 有12卡" % h, DB.hero_cards(h).size() == 12, "cards=%d" % DB.hero_cards(h).size())
 

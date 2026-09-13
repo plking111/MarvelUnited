@@ -36,7 +36,10 @@ func _ready() -> void:
 	Game.state["phase"] = "villain"
 	await Game._reveal_stone(5)
 	_check(Game.state["phase"] == "game_over", "集齐6颗宝石直接失败")
-	_check(Game.state["lose_reason"].contains("打响指"), "失败原因=打响指")
+	# 文案后来改过：_lose() 集齐 6 颗时会重写成"灭霸收集了6颗宝石，消灭了宇宙一半生命"，
+	# 所以别绑死"打响指"三个字，只要求失败原因说明了"集齐 6 颗宝石"这件事。
+	var lr: String = String(Game.state.get("lose_reason", ""))
+	_check(lr.contains("6颗宝石") or lr.contains("打响指"), "失败原因=集齐6颗宝石（实际：%s）" % lr)
 
 	# ========== 4. 决战 setup：宝石洗入牌组 ==========
 	Game.pending_campaign = {"game": 4, "order": ["cull", "proxima", "ebony"], "stones_collected": [0, 2, 4], "energy_unlocked": [0, 1]}

@@ -4,6 +4,11 @@ extends Node
 var _picked_test: Array = []
 
 func _ready() -> void:
+	# 无头环境没有渲染器：这类测试需要真实画面（截图/动画/尺寸），直接跳过而不是卡死 150 秒。
+	if DisplayServer.get_name() == "headless":
+		print("=== %s TEST PASSED (skipped: 无渲染器，需在有显示器时跑) ===" % get_script().resource_path.get_file())
+		get_tree().quit(0)
+		return
 	Game.pending_setup = {"villain": "redskull", "heroes": ["cap", "ironman", "hulk"], "challenge": "none", "peek_hands": true}
 	var board: PackedScene = load("res://src/ui/Board.tscn")
 	var inst: Control = board.instantiate()

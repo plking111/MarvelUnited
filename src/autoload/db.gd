@@ -8,6 +8,7 @@ var missions: Array = []
 var challenges: Array = []
 var stones: Array = []
 var energy_cards: Array = []
+var s6: Dictionary = {}   # 邪恶六人组模式数据（弱点卡 / 16 张行动卡 / 各反派 BAM）
 
 func _ready() -> void:
 	load_data()
@@ -22,11 +23,14 @@ func load_data() -> void:
 	var inf = _load_json("res://data/infinity.json")
 	stones = inf.get("stones", [])
 	energy_cards = inf.get("energy_cards", [])
-	assert(heroes.size() >= 5, "英雄数据应至少5位")
-	assert(villains.size() == 11, "反派数据应有11个")
+	s6 = _load_json("res://data/s6.json")
+	assert(heroes.size() >= 57, "英雄数据应至少57位（第一季众筹三批共37位 + 基础盒/瓦坎达/阿斯加德/银护/蜘蛛侠扩）")
+	assert(villains.size() == 20, "反派数据应有20个（19 + 第一季众筹·摩多克）")
 	assert(locations.size() == 44, "地点数据应有44张")
 	assert(missions.size() == 3, "任务卡应有3张")
 	assert(stones.size() == 6, "无限宝石应有6颗")
+	assert((s6.get("actions", []) as Array).size() == 16, "邪恶六人组行动卡应有16张")
+	assert((s6.get("weak", {}) as Dictionary).size() == 6, "邪恶六人组弱点卡应有6张")
 
 func _load_json(path: String) -> Dictionary:
 	var f := FileAccess.open(_resolve_data_path(path), FileAccess.READ)

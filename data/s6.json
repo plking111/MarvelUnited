@@ -1,0 +1,43 @@
+{
+  "letters": {"A": "docock", "B": "mysterio", "C": "kraven", "D": "sandman", "E": "electro", "F": "vulture"},
+  "order": ["docock", "mysterio", "kraven", "sandman", "electro", "vulture"],
+  "panel_order": ["kraven", "sandman", "electro", "mysterio", "docock", "vulture"],
+  "weak": {
+    "kraven":   {"img": 1, "syms": ["attack", "heroic", "heroic"]},
+    "vulture":  {"img": 2, "syms": ["heroic", "move", "move"]},
+    "electro":  {"img": 3, "syms": ["attack", "heroic", "move"]},
+    "sandman":  {"img": 4, "syms": ["attack", "heroic", "move"]},
+    "docock":   {"img": 5, "syms": ["attack", "move", "heroic"]},
+    "mysterio": {"img": 6, "syms": ["attack", "heroic", "heroic"]}
+  },
+  "actions": [
+    {"move": 1, "all": true,  "order": "ABCDEF", "text": "邪恶六人组：激活所有未被击败的反派（从 A~F 按顺序）"},
+    {"move": 1, "order": "DFBEAC", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "DCEBFA", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "BEFCDA", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "CFBEAD", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "ADFBCE", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "AEBCDF", "first": "thug", "second": "civ"},
+    {"move": 1, "order": "BDCAFE", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "ACEDFB", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "EFDCBA", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "ABDCEF", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "BCEDAF", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "AFDEBC", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "BFAECD", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "DEACBF", "first": "thug", "second": "civ"},
+    {"move": 2, "order": "CEADFB", "first": "thug", "second": "civ"}
+  ],
+  "bam": {
+    "kraven": "从猎人克莱文顺时针计算，第一个孤独（所在地点只有他一个英雄）的英雄受到 2 点伤害；如果没有英雄是孤独的，则在克莱文所在地点添加 2 个平民。",
+    "sandman": "沙人获得 1 点生命值（可超过上限），并对沙人所在地点的每个英雄造成 1 点伤害。",
+    "electro": "对电光人所在地点的两个相邻地点的每个英雄造成 1 点伤害。",
+    "mysterio": "神秘客所在地点的每个英雄获得 1 个危机指示物。",
+    "docock": "在章鱼博士所在地点放置 1 个危机指示物，然后对在拥有危机指示物的地点的每个英雄造成 1 点伤害（只看地点的危机指示物）。",
+    "vulture": "如果秃鹫所在地点有任何平民/暴徒，则把他们移动到秃鹫身上。"
+  },
+  "special": "当英雄被 KO 时，反派不会激活 BAM！，而是抽取一张反派行动卡面朝下放到故事情节中。",
+  "overflow": "如果 1 个或多个平民/暴徒指示物无法放置到某个地点，则抽取一张反派行动卡面朝下放到故事情节中。",
+  "vulture_rule": "秃鹫将要受到伤害时，如果他持有任意平民/暴徒指示物，则忽略本回合将要受到的全部伤害，并将这些指示物移动到秃鹫所在的地点（会导致溢出效果）。",
+  "mysterio_rule": "拥有危机指示物的英雄在其回合必须随机打出行动牌，然后丢弃一个危机指示物。"
+}

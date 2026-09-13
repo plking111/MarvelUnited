@@ -51,6 +51,12 @@ func _ready() -> void:
 	var k_loc2: int = Game.state["heroes"]["korg"]["location"]
 	var adj_f: int = (k_loc2 + Game.LOCATION_COUNT - 1) % Game.LOCATION_COUNT
 	var adj_b: int = (k_loc2 + 1) % Game.LOCATION_COUNT
+	# 去随机：地点是随机抽的，若这两个相邻地点上带威胁卡，autopilot 选"首目标"会先打威胁、
+	# 暴徒打不掉 → 偶发失败（全量跑时曾红过一次）。这里把威胁清掉，保证目标只有暴徒。
+	Game.state["locations"][adj_f]["threat"] = null
+	Game.state["locations"][adj_b]["threat"] = null
+	Game.state["locations"][adj_f]["threat_token"] = false
+	Game.state["locations"][adj_b]["threat_token"] = false
 	Game.state["locations"][adj_f]["thug"] = 1
 	Game.state["locations"][adj_b]["thug"] = 1
 	Game.state["story"].append({"type": "hero", "hero": "korg", "idx": kf_idx})

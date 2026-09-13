@@ -22,6 +22,22 @@ var _rule_page_idx: int = 0
 
 func _ready() -> void:
 	UiKit.preload_scene("res://src/ui/OnlinePrep.tscn")
+	# 自检入口（导出后也能用，官方 release 模板不支持命令行指定场景）：
+	#   MarvelUnited.exe -- lobby        直接进联机大厅
+	#   MarvelUnited.exe -- lobby-host   进大厅并立刻创建房间（验证建房路径）
+	#   MarvelUnited.exe -- online       直接进"选择游戏方式"页
+	# ⚠️ get_cmdline_user_args() 返回的是 `--` 之后的**原样**参数串：
+	#   写 `-- --lobby-host` 时拿到的是 "--lobby-host"，与 "lobby-host" 不相等（会静默不生效）。
+	#   这里统一去掉前导 "-"，两种写法都能用（文档里两种写法都出现过）。
+	var uflags: Array = []
+	for a in OS.get_cmdline_user_args():
+		uflags.append(String(a).lstrip("-"))
+	if uflags.has("lobby") or uflags.has("lobby-host"):
+		UiKit.goto_scene("res://src/ui/Lobby.tscn")
+		return
+	if uflags.has("online"):
+		UiKit.goto_scene("res://src/ui/OnlinePrep.tscn")
+		return
 	_build_menu()
 	_build_settings_panel()
 	_build_rules_ui()

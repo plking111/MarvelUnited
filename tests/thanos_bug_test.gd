@@ -37,15 +37,20 @@ func _ready() -> void:
 	# 记录反派牌堆数量
 	var deck_before: int = Game.state["master_deck"].size()
 	call_deferred("_begin")
-	for i in range(80):
+	# 注意：乌木侯的"到达效果"是在**反派回合结束时**（反派最终停驻在该地点）才触发的，
+	# 所以必须等整个反派回合跑完（phase 不再是 villain）再量牌堆；
+	# 原来固定 80 帧、且"phase==hero_play 且 i>20"就跳出，实测跳出时 phase 仍是 villain → 量早了。
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < 25000:
 		await get_tree().process_frame
 		var pop = board._popup
 		if pop.hand_pick_panel.visible:
 			pop.confirm_hand_pick()
 		elif pop.prompt_panel.visible and pop.prompt_buttons.get_child_count() > 0:
 			pop._on_prompt_pick(0)
-		if Game.state["phase"] == "hero_play" and i > 20:
+		if String(Game.state["phase"]) != "villain" and Time.get_ticks_msec() - t0 > 1500:
 			break
+	await get_tree().create_timer(0.6).timeout   # 留一点时间让"额外打出的一张"结算完
 	print("after villain turn: phase=", Game.state["phase"], " deck_before=", deck_before, " deck_after=", Game.state["master_deck"].size(), " villain_pos=", Game.state["villain_pos"])
 	# 乌木侯到达应额外打出一张行动牌：牌堆消耗≥2
 	var consumed: int = deck_before - Game.state["master_deck"].size()

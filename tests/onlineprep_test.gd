@@ -20,8 +20,9 @@ func _ready() -> void:
 		bad.append("按钮文本不齐全: %s" % str(texts))
 	for b in buttons:
 		if b.text == "创建房间" or b.text == "加入房间":
-			if not b.disabled:
-				bad.append("%s 应禁用（联机未实现）" % b.text)
+			# 联机早已实现：这两个按钮现在必须可点（旧断言写的是"应禁用（联机未实现）"，已过期）
+			if b.disabled:
+				bad.append("%s 应可点（联机已实现）" % b.text)
 		else:
 			if b.disabled:
 				bad.append("%s 不应禁用" % b.text)

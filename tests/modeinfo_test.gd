@@ -86,10 +86,11 @@ func _ready() -> void:
 		bad.append("选中后移出悬停应仍显示选中模式说明")
 	if inst._mode_info_title.text != "困难挑战模式":
 		bad.append("移出后应显示选中模式而非其他")
-	# 6) 不存在的编号（29）无说明：不显示窗口
-	inst._on_mode_hover(29)
-	if inst._mode_info.visible:
-		bad.append("无说明的模式不应显示窗口")
+	# 6) 真正不存在的编号（999）：不能出现"空白说明窗口"
+	#    （原来用 29 当"不存在"，但模式数据已经扩到 28 个以上，29 是真实模式 → 前提过期）
+	inst._on_mode_hover(999)
+	if inst._mode_info.visible and String(inst._mode_info_desc.text).length() < 10:
+		bad.append("悬停不存在的模式时不应显示空说明")
 	if bad.is_empty():
 		print("=== MODE INFO TEST PASSED ===")
 		get_tree().quit(0)

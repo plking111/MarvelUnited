@@ -16,6 +16,13 @@ func _ready() -> void:
 	var bad: Array = []
 	Events.prompt_choice.connect(func(options: Array, title: String, cb: Callable) -> void:
 		Game._on_answer.call_deferred(options.size() - _answer_mode))
+	# 攻击目标/跳过/返回这些弹窗现在走行动弹窗（prompt_action）而不是纯文字 prompt_choice，
+	# 所以这里也必须接：把 rows 摊平成"选项文字数组"后索引含义不变，"倒数第 N 项"逻辑照用。
+	Events.prompt_action.connect(func(rows: Array, _t3: String, _cb3: Callable) -> void:
+		var options: Array = []
+		for r in rows:
+			options.append(String((r as Dictionary).get("text", "")))
+		Game._on_answer.call_deferred(options.size() - _answer_mode))
 
 	# 场景1：跳过攻击（选「跳过行动」，倒数第2项）→ 符号被消耗（数量减一），不归还
 	_answer_mode = 2

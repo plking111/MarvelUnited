@@ -40,11 +40,14 @@ func _ready() -> void:
 	Game.state["eliminated"] = ["cap", "ironman"]
 	_check(Game._check_lose(), "thanos eliminated 2/2 失败")
 
-	# ========== 4. 灭霸 BAM：同地2伤 / 异地1伤 ==========
+	# ========== 4. 灭霸 BAM：同地2伤 / 相邻地1伤 ==========
+	# ⚠️ 原写死 ironman 在 location 3 —— 那是灭霸所在地点的**正对面**（6 地点环：0 的相邻只有 5 和 1）。
+	#    那是"旧实现整张地图都挨打"留下的过期期望；按用户裁定的规则（只打所在地点 + 两个相邻地点）
+	#    应把 ironman 放在**相邻**地点，否则本项必然红。thanos_bam_test（11 项）覆盖同一条规则。
 	Game.setup("thanos", ["cap", "ironman"], "none")
 	Game.state["villain_pos"] = 0
 	Game.state["heroes"]["cap"]["location"] = 0
-	Game.state["heroes"]["ironman"]["location"] = 3
+	Game.state["heroes"]["ironman"]["location"] = 1
 	for hid in ["cap", "ironman"]:
 		Game.state["heroes"][hid]["hand"] = ["0", "1", "2", "3", "4"]
 		Game.state["heroes"][hid]["deck"] = []
@@ -54,7 +57,7 @@ func _ready() -> void:
 	await Game._trigger_panel_bam()
 	# autopilot 下 _ask_hand_cards 自动弃牌
 	_check(Game.state["heroes"]["cap"]["hand"].size() == cap_before - 2, "灭霸BAM cap 弃2张（同地2伤）")
-	_check(Game.state["heroes"]["ironman"]["hand"].size() == im_before - 1, "灭霸BAM ironman 弃1张（异地1伤）")
+	_check(Game.state["heroes"]["ironman"]["hand"].size() == im_before - 1, "灭霸BAM ironman 弃1张（相邻地点1伤）")
 
 	# ========== 5. 暗夜比邻星 BAM：1伤 + 弃平民 + 屠宰 ==========
 	Game.setup("proxima", ["cap", "ironman"], "none")

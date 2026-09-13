@@ -23,6 +23,10 @@ func _ready() -> void:
 		await get_tree().process_frame
 		Game._on_answer(0)
 	Events.prompt_choice.connect(conn)
+	# 行动弹窗（prompt_action）也要接：英勇/攻击目标这类弹窗现在走新弹窗，不接则动作永远执行不完
+	Events.prompt_action.connect(func(_rows: Array, _t4: String, _cb4: Callable) -> void:
+		await get_tree().process_frame
+		Game._on_answer(0))
 	Game.use_symbol("heroic")
 	for i in range(5):
 		await get_tree().process_frame
@@ -36,6 +40,9 @@ func _ready() -> void:
 		await get_tree().process_frame
 		Game._on_answer(0)
 	Events.prompt_choice.connect(conn2)
+	Events.prompt_action.connect(func(_rows2: Array, _t5: String, _cb5: Callable) -> void:
+		await get_tree().process_frame
+		Game._on_answer(0))
 	Game.use_symbol("attack")
 	for i in range(5):
 		await get_tree().process_frame

@@ -22,6 +22,10 @@ func _ready() -> void:
 	print("行动前按钮数=", before)
 	Events.prompt_choice.connect(func(options: Array, title: String, cb: Callable) -> void:
 		Game._on_answer.call_deferred(0))
+	# 本测试带了 Board，行动弹窗由 PopupLayer 显示（兼容桥此时故意不动作），
+	# 不自己应答就会一直等 → waiting_input 永远是 true。这里直接答第 0 项。
+	Events.prompt_action.connect(func(rows: Array, title: String, cb: Callable) -> void:
+		Game._on_answer.call_deferred(0))
 	var bad: Array = []
 	Game.use_symbol("attack")
 	# use_symbol 的同步段内已进入 _ask → begin_wait，且 Board 同步刷新隐藏按钮

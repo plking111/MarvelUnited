@@ -48,8 +48,9 @@ func _ready() -> void:
 	lv.threat.visible = true
 	lv._update_threat_heroic_slots(t)
 	var slot0: TextureRect = lv.heroic_slots[0]
-	var expect_y: float = 0.802 * 96.0 - 27.0 / 2.0 + 4.0
-	_check(abs(slot0.position.y - expect_y) < 0.5, "英勇槽 y=%.1f（期望 %.1f，+4px）" % [slot0.position.y, expect_y])
+	# 槽位纵向比例取当前校准后的 THREAT_HEROIC_SLOTS（历史上的 +4px 已并入校准值 0.815）
+	var expect_y: float = float(LocationView.THREAT_HEROIC_SLOTS["y"]) * 96.0 - 27.0 / 2.0
+	_check(abs(slot0.position.y - expect_y) < 0.5, "英勇槽 y=%.1f（期望 %.1f）" % [slot0.position.y, expect_y])
 
 	if _fails.size() == 0:
 		print("=== SETUP/THREAT BUGS TEST PASSED ===")

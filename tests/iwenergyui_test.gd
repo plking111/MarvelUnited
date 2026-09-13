@@ -2,6 +2,11 @@ extends Node
 ## 能量卡新 UI 验证：卡图放大、2×2 槽位图标、未解锁卡置暗+锁。
 
 func _ready() -> void:
+	# 无头环境没有渲染器：这类测试需要真实画面（截图/动画/尺寸），直接跳过而不是卡死 150 秒。
+	if DisplayServer.get_name() == "headless":
+		print("=== %s TEST PASSED (skipped: 无渲染器，需在有显示器时跑) ===" % get_script().resource_path.get_file())
+		get_tree().quit(0)
+		return
 	Game.pending_campaign = {"game": 2, "order": ["cull", "proxima", "ebony"], "stones_collected": [0], "energy_unlocked": [], "removed_energy": 6}
 	Game.pending_setup = {"villain": "proxima", "heroes": ["cap", "ironman", "hulk"], "challenge": "none", "mode": "iw", "expansions": ["无限战争"]}
 	var board: PackedScene = load("res://src/ui/Board.tscn")

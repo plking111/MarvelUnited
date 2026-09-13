@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="漫威联合"
-config/description="《漫威联合》基础版本地热座电子化（1-4人合作）"
-config/version="0.1.0"
+config/description="《漫威联合》电子化（1-4人合作，支持本地热座与局域网联机）"
+config/version="3.10"
 run/main_scene="res://src/ui/MainMenu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.png"
@@ -22,6 +22,7 @@ config/icon="res://icon.png"
 DB="*res://src/autoload/db.gd"
 Events="*res://src/autoload/events.gd"
 Game="*res://src/autoload/game.gd"
+Net="*res://src/autoload/net.gd"
 
 [display]
 

@@ -21,7 +21,7 @@ func _check(name: String, ok: bool, detail: String) -> void:
 		print("PASS: %s — %s" % [name, detail])
 
 func _test_ronan_setup() -> void:
-	_check("反派数量为10", DB.villains.size() == 10, "size=%d" % DB.villains.size())
+	_check("反派数量与 DB 一致（曾写死 10，扩到 18 后过期）", DB.villains.size() >= 18, "size=%d" % DB.villains.size())
 	Game.setup("ronan", ["cap", "ironman", "hulk"], "none")
 	# 检查威胁卡初始化：6 个地点各1张，罗南威胁卡应有 clear 字段
 	var has_clear := false

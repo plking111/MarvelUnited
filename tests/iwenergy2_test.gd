@@ -49,7 +49,10 @@ func _ready() -> void:
 	var m: int = Game.energy_match_slot(6, "wild")
 	_check(m >= 0 and m != 3, "万能可匹配普通符号槽（索引%d）" % m)
 	# 通过 _offer_energy_or_use 验证弹窗出现"填充能量卡"选项
-	Events.prompt_choice.connect(func(opts: Array, _t: String, cb: Callable) -> void:
+	Events.prompt_action.connect(func(rows: Array, _t: String, cb: Callable) -> void:
+		var opts: Array = []
+		for r in rows:
+			opts.append(String(r.get("text", "")))
 		_seen_options = opts.duplicate()
 		cb.call_deferred(0))
 	Game.state["action_symbols"] = ["attack"]

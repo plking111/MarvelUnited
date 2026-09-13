@@ -1,5 +1,5 @@
 extends Control
-## 设置界面（三步向导）：1选择模式 → 2选择英雄/人数 → 3选择反派/挑战。
+## 设置界面（四步向导）：1选择模式 → 2选择英雄/人数 → 3选择反派/挑战 → 4选择地点扩展。
 
 var _step := 1
 var _mode := "base"  # base / shield
@@ -30,6 +30,7 @@ var _sort_buttons: Dictionary = {}
 var _hero_tooltip: PanelContainer   # 英雄悬停强度窗口
 var _hero_tooltip_title: Label
 var _hero_tooltip_body: Label
+var _hero_tooltip_fx: RichTextLabel   # 英雄悬停：特殊效果区（富文本，符号用图标显示）
 var _hero_tooltip_hid: String = ""
 var _villain_panel_tooltip: PanelContainer   # 反派悬停面板背面预览
 var _villain_panel_img: TextureRect
@@ -37,6 +38,9 @@ var _villain_panel_vid: String = ""
 var _hero_row_labels: Array = []   # 每行图标后的数字 Label（4 行）
 var _hero_row_bars: Array = []     # 每行进度条填充 ColorRect（4 行）
 var _exp_labels: Array = []
+var _loc_list: Control                 # 地点扩展页：行容器（可重建，支持搜索过滤）
+var _loc_search: LineEdit              # 地点扩展页：搜索输入框
+var _loc_rows: Dictionary = {}         # 地点扩展页：扩展名 -> CheckButton（重建后同步勾选状态）
 var _step_pages: Dictionary = {}
 var _nav_back: Button
 var _nav_next: Button
@@ -55,10 +59,12 @@ var _mode_info_title: Label
 var _mode_info_desc: Label
 
 # 排序数据：拼音首字母 + 所属扩展盒（目前全部为基础盒）
-const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L", "ronan": "L", "goblin": "L"}
-const HERO_SORT := {"cap": "M", "ironman": "G", "cmarvel": "J", "hulk": "L", "widow": "H", "winter": "W", "shuri": "S", "blackpanther": "B", "korg": "K", "valkyrie": "N", "betaray": "M", "thor": "L", "starlord": "X", "rocket": "H", "gamora": "K", "groot": "G", "spiderman": "Z", "miles": "M", "gwenspider": "G", "spiderpig": "Z"}
-const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德", "ronan": "银河护卫队", "goblin": "蜘蛛侠扩"}
-const HERO_EXP := {"cap": "基础盒", "ironman": "基础盒", "cmarvel": "基础盒", "hulk": "基础盒", "widow": "基础盒", "winter": "瓦坎达", "shuri": "瓦坎达", "blackpanther": "瓦坎达", "korg": "阿斯加德", "valkyrie": "阿斯加德", "betaray": "阿斯加德", "thor": "阿斯加德", "starlord": "银河护卫队", "rocket": "银河护卫队", "gamora": "银河护卫队", "groot": "银河护卫队", "spiderman": "蜘蛛侠扩", "miles": "蜘蛛侠扩", "gwenspider": "蜘蛛侠扩", "spiderpig": "蜘蛛侠扩"}
+const VILLAIN_SORT := {"redskull": "H", "ultron": "A", "taskmaster": "M", "thanos": "T", "proxima": "A", "cull": "H", "ebony": "W", "kilmonger": "J", "loki": "L", "ronan": "L", "goblin": "L", "corvus": "W", "vulture": "T", "mysterio": "S", "docock": "Z", "kraven": "L", "sandman": "S", "electro": "D", "zemo": "Z", "modok": "M"}
+const HERO_SORT := {"cap": "M", "ironman": "G", "cmarvel": "J", "hulk": "L", "widow": "H", "winter": "W", "shuri": "S", "blackpanther": "B", "korg": "K", "valkyrie": "N", "betaray": "M", "thor": "L", "starlord": "X", "rocket": "H", "gamora": "K", "groot": "G", "spiderman": "Z", "miles": "M", "gwenspider": "G", "spiderpig": "Z", "wasp": "H", "okoye": "A", "falcon": "L", "antman": "Y", "spiderman2099": "Z", "blackcat": "M", "venom": "D", "spiderwoman": "Z", "vision": "H", "hawkeye": "Y", "warmachine": "Z", "nickfury": "N", "mantis": "T", "shangchi": "S", "drax": "D", "drstrange": "Q", "ironfist": "T", "punisher": "C", "scarletwitch": "F", "lukecage": "L", "jessicajones": "J", "quicksilver": "K", "daredevil": "Y", "elektra": "A", "adamwarlock": "S", "missamerica": "M", "nebula": "X", "yondou": "Y", "ghostrider": "E", "mockingbird": "F", "shehulk": "N", "squirrelgirl": "S", "moonknight": "Y", "nova": "X", "blade": "D", "howardtheduck": "H", "msmarvel": "J"}
+const VILLAIN_EXP := {"redskull": "基础盒", "ultron": "基础盒", "taskmaster": "基础盒", "thanos": "无限战争", "proxima": "无限战争", "cull": "无限战争", "ebony": "无限战争", "kilmonger": "瓦坎达", "loki": "阿斯加德", "ronan": "银河护卫队", "goblin": "蜘蛛侠扩", "corvus": "第一季众筹", "vulture": "邪恶六人组", "mysterio": "邪恶六人组", "docock": "邪恶六人组", "kraven": "邪恶六人组", "sandman": "邪恶六人组", "electro": "邪恶六人组", "zemo": "第一季众筹", "modok": "第一季众筹"}
+const HERO_EXP := {"cap": "基础盒", "ironman": "基础盒", "cmarvel": "基础盒", "hulk": "基础盒", "widow": "基础盒", "winter": "瓦坎达", "shuri": "瓦坎达", "blackpanther": "瓦坎达", "korg": "阿斯加德", "valkyrie": "阿斯加德", "betaray": "阿斯加德", "thor": "阿斯加德", "starlord": "银河护卫队", "rocket": "银河护卫队", "gamora": "银河护卫队", "groot": "银河护卫队", "spiderman": "蜘蛛侠扩", "miles": "蜘蛛侠扩", "gwenspider": "蜘蛛侠扩", "spiderpig": "蜘蛛侠扩", "wasp": "基础盒", "okoye": "第一季众筹", "falcon": "第一季众筹", "antman": "基础盒", "spiderman2099": "第一季众筹", "blackcat": "第一季众筹", "venom": "第一季众筹", "spiderwoman": "第一季众筹", "vision": "第一季众筹", "hawkeye": "第一季众筹", "warmachine": "第一季众筹", "nickfury": "第一季众筹", "mantis": "第一季众筹", "shangchi": "第一季众筹", "drax": "第一季众筹", "drstrange": "第一季众筹", "ironfist": "第一季众筹", "punisher": "第一季众筹", "scarletwitch": "第一季众筹", "lukecage": "第一季众筹", "jessicajones": "第一季众筹", "quicksilver": "第一季众筹", "daredevil": "第一季众筹", "elektra": "第一季众筹", "adamwarlock": "第一季众筹", "missamerica": "第一季众筹", "nebula": "第一季众筹", "yondou": "第一季众筹", "ghostrider": "第一季众筹", "mockingbird": "第一季众筹", "shehulk": "第一季众筹", "squirrelgirl": "第一季众筹", "moonknight": "第一季众筹", "nova": "第一季众筹", "blade": "第一季众筹", "howardtheduck": "第一季众筹", "msmarvel": "第一季众筹"}
+# 地点扩展页搜索用拼音首字母（除中文名外，也支持输入 JCH / YHWD 这类首字母过滤）
+const LOC_PINYIN := {"基础盒": "JCH", "无限战争": "WXZZ", "无限战争决战": "WXZZJZ", "瓦坎达": "WKD", "阿斯加德": "ASJD", "银河护卫队": "YHWD", "蜘蛛侠扩": "ZZXK"}
 
 # 英雄顺位框颜色：按彩虹色排列（红橙黄绿青蓝紫），第 8 位起循环（支持更多玩家）
 const HERO_SLOT_COLORS := [
@@ -82,10 +88,10 @@ const MODE_DATA := {
 	7: {"name": "无限战争模式", "mode": "iw", "challenge": "none", "impl": true},
 	8: {"name": "超级反派模式", "impl": false},
 	9: {"name": "濒危地点模式", "mode": "base", "challenge": "endangered", "impl": true},
-	10: {"name": "叛徒挑战模式", "impl": false},
-	11: {"name": "B计划挑战模式", "impl": false},
-	12: {"name": "秘密身份挑战模式", "impl": false},
-	13: {"name": "邪恶六人组模式", "impl": false},
+	10: {"name": "叛徒挑战模式", "mode": "base", "challenge": "traitor", "impl": true},
+	11: {"name": "B计划挑战模式", "mode": "base", "challenge": "planb", "impl": true},
+	12: {"name": "秘密身份挑战模式", "mode": "base", "challenge": "secretid", "impl": true},
+	13: {"name": "邪恶六人组模式", "mode": "s6", "challenge": "none", "impl": true},
 	14: {"name": "金队VS蓝队模式", "impl": false},
 	15: {"name": "危险房间挑战模式", "impl": false},
 	16: {"name": "威胁地点挑战模式", "impl": false},
@@ -124,9 +130,9 @@ func _ready() -> void:
 		var parsed: Variant = JSON.parse_string(f.get_as_text())
 		if parsed is Dictionary:
 			_mode_info_data = parsed
-	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]:
+	for hid in ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig", "wasp", "okoye", "falcon", "antman", "spiderman2099", "blackcat", "venom", "spiderwoman", "vision", "hawkeye", "warmachine", "nickfury", "mantis", "shangchi", "drax", "drstrange", "ironfist", "punisher", "scarletwitch", "lukecage", "jessicajones", "quicksilver", "daredevil", "elektra", "adamwarlock", "missamerica", "nebula", "yondou", "ghostrider", "mockingbird", "shehulk", "squirrelgirl", "moonknight", "nova", "blade", "howardtheduck", "msmarvel"]:
 		_hero_icons[hid] = load(DB.hero_back(hid))
-	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]:
+	for vid in ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]:
 		_villain_icons[vid] = load(DB.villain(vid)["back"])
 	for num in range(1, MODE_DATA.size() + 1):
 		var tex: Texture2D = load("res://assets/ui/modes/mode_%d.png" % num)
@@ -142,6 +148,8 @@ func _ready() -> void:
 	# 让 tooltip 移到最上层，避免被步骤页遮挡
 	move_child(_hero_tooltip, get_child_count() - 1)
 	move_child(_villain_panel_tooltip, get_child_count() - 1)
+	# 联机：复用本地这套界面，只加"各选各的 + 房主翻页"这一条规则
+	_mp_init()
 
 ## 创建英雄悬停强度窗口（跟随鼠标；固定大小框，显示名字 + 4 行"图标 x 数字"）
 func _create_hero_tooltip() -> void:
@@ -150,9 +158,8 @@ func _create_hero_tooltip() -> void:
 	_hero_tooltip.z_index = 100
 	_hero_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_hero_tooltip.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.10, 0.10, 0.18, 0.96)))
-	# 固定大小：所有英雄显示框一致
-	_hero_tooltip.custom_minimum_size = Vector2(240, 170)
-	_hero_tooltip.size = Vector2(240, 170)
+	# 自适应大小：只给最大宽度，高度随内容
+	_hero_tooltip.custom_minimum_size = Vector2(400, 0)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	_hero_tooltip.add_child(v)
@@ -179,19 +186,16 @@ func _create_hero_tooltip() -> void:
 		ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(ic)
 		var num := UiKit.label("0", 20, Color.WHITE)
+		num.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		num.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(num)
-		# 进度条容器（120 宽）：背景 + 填充（按数量宽度、按数量颜色）
+		# 计数条：每个行动**只有一条**（彩色填充条，不再叠一层灰色背景条）
 		var bar_holder := Control.new()
 		bar_holder.custom_minimum_size = Vector2(120, 14)
 		bar_holder.size = Vector2(120, 14)
+		bar_holder.size_flags_vertical = Control.SIZE_SHRINK_CENTER   # 计数条与左侧行动图标**垂直居中对齐**
 		bar_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		row.add_child(bar_holder)
-		var bar_bg := ColorRect.new()
-		bar_bg.color = Color(0.3, 0.3, 0.4, 0.5)
-		bar_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-		bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar_holder.add_child(bar_bg)
 		var bar_fill := ColorRect.new()
 		bar_fill.color = Color(1, 0.3, 0.3)
 		bar_fill.position = Vector2(0, 0)
@@ -201,6 +205,23 @@ func _create_hero_tooltip() -> void:
 		bar_holder.add_child(bar_fill)
 		_hero_row_bars.append(bar_fill)
 		_hero_row_labels.append(num)
+	# 特殊效果区（富文本：支持内嵌图标）
+	var fx_sep := HSeparator.new()
+	fx_sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(fx_sep)
+	var fx_title := UiKit.label("特殊效果", 16, Color(1, 0.85, 0.5))
+	fx_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(fx_title)
+	_hero_tooltip_fx = RichTextLabel.new()
+	_hero_tooltip_fx.bbcode_enabled = true
+	_hero_tooltip_fx.fit_content = true                      # 高度随内容自适应
+	_hero_tooltip_fx.scroll_active = false
+	_hero_tooltip_fx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hero_tooltip_fx.add_theme_font_size_override("normal_font_size", 18)   # 效果描述字体放大
+	_hero_tooltip_fx.add_theme_font_size_override("bold_font_size", 20)
+	_hero_tooltip_fx.custom_minimum_size = Vector2(380, 0)
+	_hero_tooltip_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(_hero_tooltip_fx)
 	add_child(_hero_tooltip)
 
 ## 反派悬停面板背面预览浮层：鼠标指向反派时显示其"面板背面"图。
@@ -263,7 +284,53 @@ func _show_hero_tooltip(hid: String) -> void:
 		elif n > 3:
 			col = Color(0.95, 0.75, 0.2)
 		fill.color = col
+	# 特殊效果：**名称与描述都相同**才合并显示 ×N（黑豹等同名不同效果的卡不合并）；
+	# 描述里的 移动/攻击/英勇/万能/平民/暴徒 换成图标
+	var fx_order: Array = []
+	var fx_count := {}
+	var fx_text := {}
+	for c in DB.hero_cards(hid):
+		var e: Variant = c.get("effect", null)
+		if e == null:
+			continue
+		var nm: String = String(e.get("name", e.get("type", "效果")))
+		var tx: String = String(e.get("text", ""))
+		var key: String = nm + "\u0001" + tx
+		if not fx_count.has(key):
+			fx_order.append(key)
+			fx_count[key] = 0
+			fx_text[key] = tx
+		fx_count[key] = int(fx_count[key]) + 1
+	if fx_order.size() == 0:
+		_hero_tooltip_fx.text = "[color=#9a9ab0]（该英雄没有特殊效果）[/color]"
+	else:
+		var lines: Array = []
+		for key in fx_order:
+			var nm2: String = String(key).split("\u0001")[0]
+			var n: int = int(fx_count[key])
+			var head: String = "[b][color=#ffd75e]%s%s[/color][/b]" % [nm2, "" if n <= 1 else " ×%d" % n]
+			lines.append("%s\n%s" % [head, _fx_icon_text(String(fx_text[key]))])
+		_hero_tooltip_fx.text = "\n".join(lines)
 	_hero_tooltip.visible = true
+	_hero_tooltip.reset_size()   # 自适应内容大小（不大不小）
+
+## 把效果描述里的符号名称替换成图标；"两次攻击/2次攻击"这类数量词换成**并排多个图标**
+func _fx_icon_text(txt: String) -> String:
+	var map := {
+		"移动": "token_move.png", "攻击": "token_attack.png", "英勇": "token_heroic.png",
+		"万能": "token_wild.png", "平民": "civ_token.png", "暴徒": "thug_token.png",
+	}
+	var num_map := {"一": 1, "两": 2, "二": 2, "三": 3, "四": 4, "1": 1, "2": 2, "3": 3, "4": 4}
+	var out: String = txt
+	# 先吃掉"N 次 <符号>"（含"行动"后缀），替换成 N 个并排图标
+	for k in map:
+		var icon := "[img=26x26]res://assets/tokens/%s[/img]" % String(map[k])
+		for cn in num_map:
+			for pat in ["%s次%s行动" % [cn, k], "%s次%s" % [cn, k], "%s 次 %s 行动" % [cn, k], "%s 次 %s" % [cn, k]]:
+				if out.contains(pat):
+					out = out.replace(pat, icon.repeat(int(num_map[cn])))
+		out = out.replace(String(k), icon)
+	return "[color=#dddddd]%s[/color]" % out
 
 func _hide_hero_tooltip() -> void:
 	if _hero_tooltip != null:
@@ -533,6 +600,9 @@ func _on_mode_hover_end() -> void:
 		_mode_info.visible = false
 
 func _on_mode_selected(num: int) -> void:
+	if act_mode(num):
+		return
+	# 单机：记录我选的模式（联机已由 act_mode 提交给主机）
 	_selected_mode_id = num
 	var m: Dictionary = MODE_DATA[num]
 	if m.get("impl", false):
@@ -563,11 +633,37 @@ func _update_mode_highlight() -> void:
 	for num in _mode_buttons:
 		var b: Control = _mode_buttons[num]
 		var tr: TextureRect = b.get_child(0)
-		if _selected_mode_id == 0 or num == _selected_mode_id:
+		if not _mode_selectable(num):
+			# 联机下不可选的模式（单人模式 / 人数不够的叛徒模式）一律黑白
+			tr.material = _gray_mat
+		elif _selected_mode_id == 0 or num == _selected_mode_id:
 			tr.material = null
 		else:
 			tr.material = _gray_mat
 		_set_card_selected(b, num == _selected_mode_id)
+
+## 该模式现在能不能选：本地看 impl；联机再额外限制（单人模式不可选、叛徒模式要 3 人以上）
+func _mode_selectable(num: int) -> bool:
+	var m: Dictionary = MODE_DATA.get(num, {})
+	if not m.get("impl", false):
+		return false
+	if _mp:
+		if String(m.get("mode", "base")) == "shield":
+			return false                                    # 单人模式（神盾局&泽维尔）
+		if num == 6:
+			return false                                    # 指挥官单人模式
+		if String(m.get("challenge", "none")) == "traitor" and Net.player_count() < 3:
+			return false                                    # 叛徒模式需要 3-4 人
+	return true
+
+## 不可选的原因（给房主看的提示）
+func _mode_block_reason(num: int) -> String:
+	if _mp:
+		if String(MODE_DATA.get(num, {}).get("mode", "base")) == "shield" or num == 6:
+			return "单人模式不支持联机"
+		if String(MODE_DATA.get(num, {}).get("challenge", "none")) == "traitor" and Net.player_count() < 3:
+			return "叛徒模式需要 3 人以上（当前 %d 人）" % Net.player_count()
+	return "该模式未实现"
 
 # ================================================================ 未上架模式弹窗
 
@@ -641,6 +737,13 @@ func _build_step_heroes() -> Control:
 	_hero_search.add_theme_font_size_override("font_size", 20)
 	_hero_search.text_changed.connect(_on_hero_search)
 	page.add_child(_hero_search)
+	# 随机选英雄（在搜索过滤后的候选里随机取，填满当前人数）
+	var rnd_hero := UiKit.button_bordered("随机选", Color(0.35, 0.55, 0.45))
+	rnd_hero.position = Vector2(1240, 95)
+	rnd_hero.custom_minimum_size = Vector2(140, 44)
+	rnd_hero.add_theme_font_size_override("font_size", 20)
+	rnd_hero.pressed.connect(_on_hero_random)
+	page.add_child(rnd_hero)
 
 	# 人数（基础模式显示；神盾局固定 3，不显示加减）
 	_count_row = Control.new()
@@ -705,7 +808,7 @@ func _build_step_heroes() -> Control:
 func _on_hero_search(_t: String) -> void:
 	_render_heroes()
 
-# ================================================================ 页面 3：地点
+# ================================================================ 页面 4：地点扩展（向导第 4 步）
 
 func _build_step_locations() -> Control:
 	var page := Control.new()
@@ -723,53 +826,152 @@ func _build_step_locations() -> Control:
 	tip.add_theme_color_override("font_color", Color(0.8, 0.8, 0.9))
 	tip.position = Vector2(60, 150)
 	page.add_child(tip)
-	# 列出所有地点扩展（去重），checkbox 勾选
+	# 工具行（标题/提示右侧，不与左侧 700 宽的行重叠）：全选 / 随机选 / 搜索
+	var b_all := UiKit.button_bordered("全选", Color(0.3, 0.5, 0.75))
+	b_all.position = Vector2(860, 138)
+	b_all.custom_minimum_size = Vector2(120, 44)
+	b_all.add_theme_font_size_override("font_size", 20)
+	b_all.pressed.connect(_on_loc_select_all)
+	page.add_child(b_all)
+	var b_rnd := UiKit.button_bordered("随机选", Color(0.35, 0.55, 0.45))
+	b_rnd.position = Vector2(990, 138)
+	b_rnd.custom_minimum_size = Vector2(120, 44)
+	b_rnd.add_theme_font_size_override("font_size", 20)
+	b_rnd.pressed.connect(_on_loc_random)
+	page.add_child(b_rnd)
+	_loc_search = LineEdit.new()
+	_loc_search.position = Vector2(1130, 142)
+	_loc_search.custom_minimum_size = Vector2(380, 40)
+	_loc_search.placeholder_text = "搜索地点扩展（中文名/拼音首字母）…"
+	_loc_search.add_theme_font_size_override("font_size", 20)
+	_loc_search.text_changed.connect(_on_loc_search)
+	page.add_child(_loc_search)
+	# 行容器：搜索过滤后重建（放在工具控件之后创建，故设为忽略鼠标，避免遮挡上方按钮）
+	_loc_list = Control.new()
+	_loc_list.position = Vector2(0, 0)
+	_loc_list.custom_minimum_size = Vector2(1920, 900)
+	_loc_list.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(_loc_list)
+	_render_locations()
+	return page
+
+## 可勾选的地点扩展（去重，保持数据顺序；决战专属不提供勾选）
+func _loc_selectable() -> Array:
 	var exps: Array = []
-	var exp_count := {}
 	for id in DB.locations.keys():
 		var e: String = DB.location(id).get("expansion", "基础盒")
-		if not exps.has(e):
-			exps.append(e)
-			exp_count[e] = 0
-		exp_count[e] = int(exp_count[e]) + 1
-	var y := 220
-	for e in exps:
 		# 决战专属地点：仅无限战争战役第 4 局（决战）自动使用，设置页不提供勾选
 		if e == "无限战争决战":
 			continue
+		if not exps.has(e):
+			exps.append(e)
+	return exps
+
+## 每个地点扩展包含的地点张数
+func _loc_counts() -> Dictionary:
+	var cnt := {}
+	for id in DB.locations.keys():
+		var e: String = DB.location(id).get("expansion", "基础盒")
+		cnt[e] = int(cnt.get(e, 0)) + 1
+	return cnt
+
+## 关键字过滤：中文名包含 或 拼音首字母包含（不区分大小写）
+func _loc_match(e: String, q: String) -> bool:
+	if q == "":
+		return true
+	if e.contains(q):
+		return true
+	return String(LOC_PINYIN.get(e, "")).to_lower().contains(q.to_lower())
+
+## 当前列表可见（过滤后）的扩展名
+func _loc_visible_list() -> Array:
+	var out: Array = []
+	var q: String = _loc_search.text.strip_edges() if _loc_search != null else ""
+	for e in _loc_selectable():
+		if _loc_match(e, q):
+			out.append(e)
+	return out
+
+## 重建地点扩展行（搜索过滤后仅显示匹配项，并从顶部紧凑排列）
+func _render_locations() -> void:
+	var parent: Control = _loc_list
+	if parent == null:
+		return
+	for c in parent.get_children():
+		# 先脱离父节点再释放，避免同帧内重建时旧行仍被 get_children() 取到
+		parent.remove_child(c)
+		c.queue_free()
+	_loc_rows.clear()
+	var counts := _loc_counts()
+	var y := 220
+	for e in _loc_visible_list():
 		var box := Control.new()
 		box.position = Vector2(60, y)
 		box.size = Vector2(700, 70)
 		var pnl := Panel.new()
-		var sb := StyleBoxFlat.new()
-		sb.bg_color = Color(0.15, 0.15, 0.24)
-		sb.corner_radius_top_left = 10
-		sb.corner_radius_top_right = 10
-		sb.corner_radius_bottom_left = 10
-		sb.corner_radius_bottom_right = 10
-		pnl.add_theme_stylebox_override("panel", sb)
+		pnl.add_theme_stylebox_override("panel", UiKit.panel_style(Color(0.15, 0.15, 0.24)))
 		pnl.set_anchors_preset(Control.PRESET_FULL_RECT)
 		box.add_child(pnl)
 		var cb := CheckButton.new()
-		cb.text = "%s（%d 张地点）" % [e, exp_count[e]]
+		cb.text = "%s（%d 张地点）" % [e, int(counts.get(e, 0))]
 		cb.add_theme_font_size_override("font_size", 24)
 		cb.position = Vector2(20, 12)
 		cb.custom_minimum_size = Vector2(400, 46)
-		cb.button_pressed = _selected_expansions.has(e)
+		cb.set_pressed_no_signal(_selected_expansions.has(e))   # 静默：不能触发 toggled，否则联机会来回反转勾选
 		cb.toggled.connect(_toggle_expansion.bind(e))
 		box.add_child(cb)
-		page.add_child(box)
+		parent.add_child(box)
+		_loc_rows[e] = cb
 		y += 90
-	return page
+	# 无匹配结果时给出提示（与页面提示文字同字号/配色）
+	if _loc_rows.is_empty():
+		var none := UiKit.label("没有匹配的地点扩展", 20, Color(0.8, 0.8, 0.9))
+		none.position = Vector2(60, 220)
+		parent.add_child(none)
+
+## 全选：勾选当前列表中的全部地点扩展（有搜索词时只作用于过滤后的条目，不影响已选但被隐藏的扩展）
+func _on_loc_select_all() -> void:
+	var vis := _loc_visible_list()
+	if vis.is_empty():
+		Events.emit_toast("没有可勾选的地点扩展")
+		return
+	if act_select_all_locations(vis):
+		return
+	for e in vis:
+		if not _selected_expansions.has(e):
+			_selected_expansions.append(e)
+	_render_locations()
+	Events.emit_toast("已全选 %d 个地点扩展" % vis.size())
+
+## 随机选：从当前列表（过滤后）随机抽取 1~N 个（N=可见条目数）替换当前勾选，保证至少勾选 1 个
+func _on_loc_random() -> void:
+	var vis := _loc_visible_list()
+	if vis.is_empty():
+		Events.emit_toast("没有可随机的地点扩展")
+		return
+	if act_random_location(vis):
+		return
+	var pool := vis.duplicate()
+	pool.shuffle()
+	var n := randi_range(1, pool.size())
+	_selected_expansions = pool.slice(0, n)
+	_render_locations()
+	Events.emit_toast("随机勾选 %d 个地点扩展：%s" % [n, "、".join(PackedStringArray(_selected_expansions))])
+
+## 地点扩展搜索：按关键字过滤列表
+func _on_loc_search(_t: String) -> void:
+	_render_locations()
 
 func _toggle_expansion(on: bool, e: String) -> void:
+	if act_pick_location(e):
+		return
 	if on:
 		if not _selected_expansions.has(e):
 			_selected_expansions.append(e)
 	else:
 		_selected_expansions.erase(e)
 
-# ================================================================ 页面 4：反派
+# ================================================================ 页面 3：反派（向导第 3 步）
 
 func _build_step_villain() -> Control:
 	var page := Control.new()
@@ -790,13 +992,24 @@ func _build_step_villain() -> Control:
 	_villain_search.add_theme_font_size_override("font_size", 20)
 	_villain_search.text_changed.connect(_on_villain_search)
 	page.add_child(_villain_search)
-	# 无限战争战役：前 3 局反派顺序（P1/P2/P3 槽位；放在搜索框右侧，不遮挡标题与卡片）
+	# 随机选反派（在搜索过滤后的候选里随机取；无限战争模式随机填满前 3 局顺序）
+	var rnd_villain := UiKit.button_bordered("随机选", Color(0.35, 0.55, 0.45))
+	rnd_villain.position = Vector2(1240, 95)
+	rnd_villain.custom_minimum_size = Vector2(140, 44)
+	rnd_villain.add_theme_font_size_override("font_size", 20)
+	rnd_villain.pressed.connect(_on_villain_random)
+	page.add_child(rnd_villain)
+	# 无限战争战役：前 3 局反派顺序（P1/P2/P3 槽位；放在随机选按钮下方，不遮挡标题与卡片）
 	_campaign_label = Label.new()
 	_campaign_label.text = ""
 	_campaign_label.add_theme_font_size_override("font_size", 20)
 	_campaign_label.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
-	_campaign_label.position = Vector2(1240, 100)
-	_campaign_label.custom_minimum_size = Vector2(600, 28)
+	# 放在偏左位置 + 定宽自动换行：以前 x=1240、宽 600（而且只设了"最小宽度"），
+	# 长文本会直接顶出屏幕右侧；必须给"固定尺寸"才会换行
+	_campaign_label.position = Vector2(980, 140)
+	_campaign_label.size = Vector2(880, 70)
+	_campaign_label.custom_minimum_size = Vector2(880, 70)
+	_campaign_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_campaign_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	page.add_child(_campaign_label)
 
@@ -843,6 +1056,77 @@ func _on_sort_mode(mode: String) -> void:
 func _on_villain_search(_t: String) -> void:
 	_render_villains()
 
+# ================================================================ 英雄页 / 反派页：随机选
+
+## 英雄页：在搜索过滤后的候选里随机取英雄，填满当前人数（神盾局固定 3）
+## 联机：只给自己随机 1 个（不能替别人选）——用户要求"随机选择按钮只作用于个人"
+func _on_hero_random() -> void:
+	if act_random_hero(_hero_random_pool()):
+		return
+	var pool: Array = _hero_random_pool()
+	if pool.is_empty():
+		Events.emit_toast("没有可选的英雄")
+		return
+	pool.shuffle()
+	var n: int = mini(_hero_slots.size(), pool.size())
+	for i in range(_hero_slots.size()):
+		_hero_slots[i] = pool[i] if i < n else ""
+	_refresh_selected()
+	_update_hero_buttons()
+	Events.emit_toast("已随机选择 %d 名英雄" % n)
+
+func _hero_random_pool() -> Array:
+	var all_ids: Array = ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig", "wasp", "okoye", "falcon", "antman", "spiderman2099", "blackcat", "venom", "spiderwoman", "vision", "hawkeye", "warmachine", "nickfury", "mantis", "shangchi", "drax", "drstrange", "ironfist", "punisher", "scarletwitch", "lukecage", "jessicajones", "quicksilver", "daredevil", "elektra", "adamwarlock", "missamerica", "nebula", "yondou", "ghostrider", "mockingbird", "shehulk", "squirrelgirl", "moonknight", "nova", "blade", "howardtheduck", "msmarvel"]
+	var q: String = _hero_search.text.strip_edges() if _hero_search != null else ""
+	if q == "":
+		return all_ids.duplicate()
+	var out: Array = []
+	for hid in all_ids:
+		if DB.hero_name(hid).contains(q) or String(hid).to_lower().contains(q.to_lower()):
+			out.append(hid)
+	return out
+
+## 反派页：随机选择反派；无限战争模式则随机填满前 3 局顺序（不重复、且不含决战专属的灭霸）
+## 联机：只给自己随机 1 个（不能替别人选）
+func _on_villain_random() -> void:
+	if act_random_villain(_villain_random_pool()):
+		return
+	var pool: Array = _villain_random_pool()
+	if pool.is_empty():
+		Events.emit_toast("没有可选的反派")
+		return
+	pool.shuffle()
+	if _mode == "iw":
+		var picks: Array = []
+		for vid in pool:
+			if vid == "thanos":
+				continue
+			if picks.size() >= 3:
+				break
+			picks.append(vid)
+		for i in range(3):
+			_campaign_slots[i] = picks[i] if i < picks.size() else ""
+		_update_villain_highlight()
+		var names: Array = []
+		for vid in _campaign_slots:
+			names.append(DB.villain_name(vid) if vid != "" else "—")
+		Events.emit_toast("已随机前 3 局反派：%s" % " → ".join(names))
+		return
+	_selected_villain = pool[0]
+	_update_villain_highlight()
+	Events.emit_toast("已随机选择反派：%s" % DB.villain_name(_selected_villain))
+
+func _villain_random_pool() -> Array:
+	var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
+	var q: String = _villain_search.text.strip_edges() if _villain_search != null else ""
+	if q == "":
+		return all_ids.duplicate()
+	var out: Array = []
+	for vid in all_ids:
+		if DB.villain_name(vid).contains(q) or String(vid).to_lower().contains(q.to_lower()):
+			out.append(vid)
+	return out
+
 func _update_sort_highlight() -> void:
 	for sm in _sort_buttons:
 		var b: Button = _sort_buttons[sm]
@@ -882,14 +1166,15 @@ func _render_villains() -> void:
 	if _mode == "iw" and _sort_mode == "alpha" and q == "":
 		# 无限战争战役（按首字母）：三手下置前（暗夜比邻星/黑矮星/乌木侯），
 		# 剩余按拼音排列，灭霸置暗放最后
-		var rest_ids: Array = ["redskull", "ultron", "taskmaster", "thanos"]
+		var rest_ids: Array = ["redskull", "ultron", "taskmaster", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
 		rest_ids.sort_custom(func(a: String, b: String) -> bool: return str(VILLAIN_SORT[a]) < str(VILLAIN_SORT[b]))
+		rest_ids.append("thanos")   # 灭霸（决战专属）固定排最后
 		groups = [
 			{"name": "无限战争（前3局默认反派，向换反派先取消选择）", "ids": ["proxima", "cull", "ebony"]},
 			{"name": "其他反派", "ids": rest_ids},
 		]
 	else:
-		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin"]
+		var all_ids: Array = ["redskull", "ultron", "taskmaster", "thanos", "proxima", "cull", "ebony", "kilmonger", "loki", "ronan", "goblin", "corvus", "vulture", "mysterio", "docock", "kraven", "sandman", "electro", "zemo", "modok"]
 		if q != "":
 			# 搜索过滤：所有匹配反派合并成一个列表，按拼音重排，左上角紧凑排列
 			var matched: Array = []
@@ -942,7 +1227,7 @@ func _render_heroes() -> void:
 	_clear_exp_labels(parent)
 	# 搜索词：非空时只显示匹配英雄，并从左上角重排（过滤后不保留空位）
 	var q: String = _hero_search.text.strip_edges() if _hero_search != null else ""
-	var all_ids: Array = ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig"]
+	var all_ids: Array = ["cap", "ironman", "cmarvel", "hulk", "widow", "winter", "shuri", "blackpanther", "korg", "valkyrie", "betaray", "thor", "starlord", "rocket", "gamora", "groot", "spiderman", "miles", "gwenspider", "spiderpig", "wasp", "okoye", "falcon", "antman", "spiderman2099", "blackcat", "venom", "spiderwoman", "vision", "hawkeye", "warmachine", "nickfury", "mantis", "shangchi", "drax", "drstrange", "ironfist", "punisher", "scarletwitch", "lukecage", "jessicajones", "quicksilver", "daredevil", "elektra", "adamwarlock", "missamerica", "nebula", "yondou", "ghostrider", "mockingbird", "shehulk", "squirrelgirl", "moonknight", "nova", "blade", "howardtheduck", "msmarvel"]
 	var groups: Array
 	if q != "":
 		# 搜索过滤：所有匹配英雄合并成一个列表，按拼音重排，左上角紧凑排列
@@ -1055,6 +1340,9 @@ func _show_step(n: int) -> void:
 	_nav_next.text = "开始游戏！" if n == 4 else "确定"
 	# 第 1 步：未选择模式时"确定"不可点击
 	_nav_next.disabled = (n == 1 and _selected_mode_id == 0)
+	# 进入地点页：按当前选择重绘行，避免返回上一步重置 _selected_expansions 后勾选状态残留
+	if n == 4:
+		_render_locations()
 
 func _on_back() -> void:
 	if _step <= 1:
@@ -1077,6 +1365,8 @@ func _on_back() -> void:
 	_show_step(_step - 1)
 
 func _on_next() -> void:
+	if act_next():
+		return
 	if _step == 1:
 		if _selected_mode_id == 0:
 			Events.emit_toast("请先选择一个游戏模式")
@@ -1087,8 +1377,17 @@ func _on_next() -> void:
 		_show_step(2)
 	elif _step == 2:
 		var limit := 3 if _mode == "shield" else _hero_count
-		if _selected_heroes.size() != limit:
+		var cnt := _selected_heroes.size()
+		if _selected_challenge == "traitor" and (cnt < 3 or cnt > 4):
+			Events.emit_toast("叛徒挑战模式需要 3-4 名英雄/玩家")
+			return
+		if cnt != limit:
 			Events.emit_toast("请选择 %d 名英雄" % limit)
+			return
+		# 邪恶六人组模式：6 个反派同时登场，不需要选反派 → 直接跳到地点扩展页
+		if _mode == "s6":
+			_selected_villain = "vulture"   # 占位（该模式不使用反派选择）
+			_show_step(4)
 			return
 		_show_step(3)
 	elif _step == 3:
@@ -1138,7 +1437,16 @@ func _refresh_selected() -> void:
 
 func _update_hero_count_label() -> void:
 	if _hero_count_label != null:
-		if _mode == "shield":
+		if _mp:
+			# 联机：人数由房间人数上限决定，去掉"加减人数"按钮（用户要求）
+			_hero_count_label.text = "当前：%d 人（联机房间人数上限）" % _hero_count
+			if _count_label != null:
+				_count_label.visible = false
+			if _count_minus != null:
+				_count_minus.visible = false
+			if _count_plus != null:
+				_count_plus.visible = false
+		elif _mode == "shield":
 			# 神盾局单人模式：固定 3 名英雄，不显示人数标题与加减按钮
 			_hero_count_label.text = "神盾局单人模式：固定 3 名英雄（牌组合并）"
 			if _count_label != null:
@@ -1157,6 +1465,13 @@ func _update_hero_count_label() -> void:
 				_count_plus.visible = true
 
 func _on_villain_selected(vid: String) -> void:
+	if _mp:
+		# 联机：任何人点都提交给主机记账，主机记账后广播（本地那套排顺序只用于单机）
+		if _mode == "iw":
+			if act_pick_campaign(vid):
+				return
+		elif act_pick_villain(vid):
+			return
 	if _mode == "iw":
 		# 无限战争战役：灭霸只能在第 4 局决战出现，前三局禁止选择
 		if vid == "thanos":
@@ -1239,6 +1554,8 @@ func _update_villain_highlight() -> void:
 
 ## 英雄点击：填入最低的空槽位（P1 优先）；点已选英雄只取消该顺位，其他顺位不变
 func _on_hero_toggle(hid: String) -> void:
+	if act_pick_hero(hid):
+		return
 	var slot: int = _hero_slots.find(hid)
 	if slot != -1:
 		_hero_slots[slot] = ""
@@ -1292,6 +1609,11 @@ func _update_p_label(box: Control, p: int, color: Color) -> void:
 		lb.text = "P%d" % p
 
 func _on_start() -> void:
+	if act_start():
+		return
+	if _selected_challenge == "traitor" and (_selected_heroes.size() < 3 or _selected_heroes.size() > 4):
+		Events.emit_toast("叛徒挑战模式需要 3-4 名英雄/玩家")
+		return
 	Game.pending_setup = {
 		"villain": _selected_villain,
 		"heroes": _selected_heroes.duplicate(),
@@ -1307,3 +1629,373 @@ func _on_start() -> void:
 		Game.pending_setup["villain"] = _campaign_slots[0]
 		Game.pending_campaign = {"game": 1, "order": _campaign_slots.duplicate(), "stones_collected": [], "energy_unlocked": []}
 	UiKit.goto_scene("res://src/ui/Board.tscn")
+
+# ================================================================ 联机（复用本页界面：各选各的 + 房主翻页）
+## 设计：不另做一套选择界面。座位 i 直接映射到本地已有的"顺位 P(i+1) 槽位"，
+## 所以英雄页的 P1~P4 彩框/标签、搜索、排序、扩展分组、英雄面板 tooltip 全部原样可用；
+## 反派/地点页用一张小标签标出"队友选了/勾了哪个"。
+
+var _mp := false
+
+# ================================================================ 联机意图层（结构优化第 3 步）
+## UI 只调这里的 act_*；每个函数返回 true = 已交给网络处理，调用方不要再改本地状态。
+## 目的：把「联机下哪些操作走网络」集中到一处。历史上「全选地点」就是因为这个判断散落在
+## 各处理函数里、漏了一处，导致界面看着勾上了、房主那边一个都没收到。
+## 新增联机操作时：在这里加一个 act_*，处理函数第一行调它即可。
+
+func act_pick_hero(hid: String) -> bool:
+	if not _mp:
+		return false
+	Net.request_pick("hero", hid)
+	return true
+
+func act_pick_villain(vid: String) -> bool:
+	if not _mp:
+		return false
+	Net.request_pick("villain", vid)
+	return true
+
+func act_pick_campaign(vid: String) -> bool:
+	if not _mp:
+		return false
+	Net.request_pick("campaign", vid)
+	return true
+
+func act_pick_location(exp: String) -> bool:
+	if not _mp:
+		return false
+	Net.request_pick("location", exp)
+	return true
+
+## 无限战争：每个玩家自己的"回写战役顺序"（只有房主排完才广播）
+func act_mode(num: int) -> bool:
+	if not _mp:
+		return false
+	if not Net.is_host:
+		Events.emit_toast("模式由房主选择")
+		return true
+	if not _mode_selectable(num):
+		Events.emit_toast(_mode_block_reason(num))
+		return true
+	var md: Dictionary = MODE_DATA.get(num, {})
+	Net.set_mode(String(md.get("mode", "base")), String(md.get("challenge", "none")), [])
+	_update_mode_highlight()
+	return true
+
+func act_next() -> bool:
+	if not _mp:
+		return false
+	_mp_next()
+	return true
+
+func act_start() -> bool:
+	if not _mp:
+		return false
+	if Net.is_host:
+		if Net.can_start():
+			Net.start_game()
+		else:
+			Events.emit_toast("需要至少 2 名玩家，且每个人都选了英雄")
+	else:
+		Events.emit_toast("等房主开始游戏")
+	return true
+
+## 全选地点扩展（联机：只给自己勾，且逐个提交给网络）
+func act_select_all_locations(vis: Array) -> bool:
+	if not _mp:
+		return false
+	var mine: Array = Net.my_seat_data().get("locs", [])
+	var n_add := 0
+	for e in vis:
+		if not mine.has(String(e)):
+			Net.request_pick("location", String(e))
+			n_add += 1
+	Events.emit_toast("已为你勾选 %d 个地点扩展" % n_add)
+	return true
+
+## 随机勾一个地点扩展（联机：只作用于自己）
+func act_random_location(vis: Array) -> bool:
+	if not _mp:
+		return false
+	var mine: Array = Net.my_seat_data().get("locs", [])
+	var out: Array = []
+	for e in vis:
+		if not mine.has(String(e)):
+			out.append(String(e))
+	if out.is_empty():
+		Events.emit_toast("你已经勾完了可以随机的扩展")
+		return true
+	Net.request_pick("location", String(out[randi_range(0, out.size() - 1)]))
+	return true
+
+## 随机选英雄（联机：只给自己选，排除别人已选和我已选的）
+func act_random_hero(cands_in: Array) -> bool:
+	if not _mp:
+		return false
+	var taken: Array = []
+	for i in range(Net.seats.size()):
+		var s: Variant = Net.seats[i]
+		if s == null or i == Net.my_seat():
+			continue
+		var hh := String(s.get("hero", ""))
+		if hh != "":
+			taken.append(hh)
+	var mine_h := Net.my_hero()
+	var cands: Array = []
+	for hh2 in cands_in:
+		if not taken.has(String(hh2)) and String(hh2) != mine_h:
+			cands.append(String(hh2))
+	if cands.is_empty():
+		Events.emit_toast("没有可随机的英雄（别人都选完了）")
+		return true
+	var pick := String(cands[randi_range(0, cands.size() - 1)])
+	Net.request_pick("hero", pick)
+	Events.emit_toast("已为你随机选择：%s" % DB.hero_name(pick))
+	return true
+
+## 随机选反派（联机：只给自己选，排除我已选的）
+func act_random_villain(cands_in: Array) -> bool:
+	if not _mp:
+		return false
+	var mine_v := String(Net.my_seat_data().get("villain", ""))
+	var out: Array = []
+	for vid in cands_in:
+		if String(vid) != mine_v:
+			out.append(String(vid))
+	if out.is_empty():
+		Events.emit_toast("没有可随机的反派")
+		return true
+	Net.request_pick("villain", String(out[randi_range(0, out.size() - 1)]))
+	return true
+func _mp_init() -> void:
+	_mp = Net.active
+	if not _mp:
+		return
+	Net.lobby_changed.connect(_mp_sync)
+	Net.phase_changed.connect(_mp_on_phase)
+	_mp_sync()
+	_mp_on_phase(Net.phase)
+
+func _mp_step_of_phase(p: String) -> int:
+	match p:
+		"mode": return 1
+		"hero": return 2
+		"villain": return 3
+		"location": return 4
+	return 1
+
+func _mp_on_phase(p: String) -> void:
+	if not _mp:
+		return
+	_show_step(_mp_step_of_phase(p))
+	# 翻页只有房主能做
+	_nav_next.disabled = not Net.is_host
+	_nav_back.visible = false
+	_mp_sync()
+
+## 把 Net 的座位/选择同步进本地界面状态（座位 i → 顺位 P(i+1)）
+func _mp_sync() -> void:
+	if not _mp:
+		return
+	var n: int = clampi(int(Net.room.get("max", Net.seats.size())), 2, 4)
+	_hero_count = n
+	_sync_slots()
+	for i in range(n):
+		var s: Variant = Net.seats[i] if i < Net.seats.size() else null
+		_hero_slots[i] = String(s.get("hero", "")) if s != null else ""
+	_refresh_selected()
+	_update_hero_buttons()
+	_update_mode_highlight()   # 人数变化会影响"叛徒模式能不能选"，要跟着刷新黑白
+	# 模式：显示房主选的（含高亮同步）
+	if not Net.mode_cfg.is_empty():
+		# 必须 mode + challenge 一起比：只比 challenge 时"无限战争(挑战=none)"会被认成"基础模式(挑战=none)"
+		var m_mode := String(Net.mode_cfg.get("mode", "base"))
+		var m_ch := String(Net.mode_cfg.get("challenge", "none"))
+		for k in MODE_DATA.keys():
+			var md_k: Dictionary = MODE_DATA[k]
+			if String(md_k.get("mode", "")) == m_mode and String(md_k.get("challenge", "")) == m_ch:
+				_selected_mode_id = int(k)
+				_mode = m_mode
+				_selected_challenge = m_ch
+				break
+		_update_mode_highlight()
+		_nav_next.disabled = (not Net.is_host) or _selected_mode_id == 0
+	# 无限战争：反派顺序用房主排的（客户端只读显示）
+	# 否则后面的地点同步整段被跳过 → 玩家明明选了地点却显示未选择。
+	if _mode == "iw":
+		_campaign_slots = Net.my_campaign_slots()
+		# 先按当前模式重建卡片，再上高亮和 Px 标记（顺序反了标记会被重建冲掉）
+		_render_villains()
+		_update_villain_highlight()
+		# 别人的三格：在对应卡片左上角标 Px（谁选了哪个反派一眼可见）
+		for vid_t in _villain_buttons:
+			var marks: Array = []
+			for i_t in range(Net.seats.size()):
+				if i_t == Net.my_seat():
+					continue
+				var s_t: Variant = Net.seats[i_t]
+				if s_t == null:
+					continue
+				if (s_t.get("cs", []) as Array).has(String(vid_t)):
+					marks.append("P%d" % (i_t + 1))
+			_mp_set_tag(_villain_buttons[vid_t], " ".join(marks))
+	else:
+		_selected_villain = String(Net.my_seat_data().get("villain", ""))
+		_update_villain_highlight()
+		_mp_tag_villains()
+	# 地点：我的扩展勾选 + 队友的标签（这一段绝对不能跳过）
+	_selected_expansions = (Net.my_seat_data().get("locs", []) as Array).duplicate()
+	_render_locations()
+	_mp_tag_locs()
+
+func _mp_next() -> void:
+	if not Net.is_host:
+		Events.emit_toast("等房主推进下一步")
+		return
+	match _step:
+		1:
+			if _selected_mode_id == 0:
+				Events.emit_toast("请先选择一个游戏模式")
+				return
+			if not _mode_selectable(_selected_mode_id):
+				Events.emit_toast(_mode_block_reason(_selected_mode_id))
+				return
+			Net.set_mode(_mode, _selected_challenge, [])
+			Net.set_phase("hero")
+		2:
+			var miss: Array = _mp_missing("hero")
+			if not miss.is_empty():
+				# 英雄是必选：还有人没选就挡住，弹窗点名（用户要求）
+				Net.show_modal("还不能进入下一步：\n%s\n\n请等他们选完英雄。" % "\n".join(miss),
+					[{"key": "ok", "label": "知道了"}])
+				await Net.modal_choice
+				return
+			Net.set_phase("villain")
+			if _mode == "s6":
+				Net.set_phase("location")   # 邪恶六人组：6 个反派同时登场，不需要选反派
+				return
+		3:
+			if _mode == "iw":
+				# 无限战争走"前 3 局三格"的检查；检查完必须 return，
+				# 否则会掉进下面"每人选 1 个反派"的旧检查 → 误报"XX 未选择反派"（用户报的 bug）
+				var miss_iw: Array = []
+				for i3 in range(3):
+					if Net.campaign_pool(i3).is_empty():
+						miss_iw.append("第 %d 局没有任何候选反派" % (i3 + 1))
+				if not miss_iw.is_empty():
+					Net.show_modal("还不能进入下一步：\n%s\n\n每人可以往第 1/2/3 局各放反派（红/橙/绿框）。" % "\n".join(miss_iw),
+						[{"key": "ok", "label": "知道了"}])
+					await Net.modal_choice
+					return
+				Net.set_phase("location")
+				return
+			var miss3: Array = _mp_missing("villain")
+			if not miss3.is_empty():
+				Net.show_modal("%s\n\n反派可以不选，不选的人不会进入随机池。仍然继续吗？" % "\n".join(miss3),
+					[{"key": "go", "label": "继续"}, {"key": "back", "label": "返回"}])
+				if await Net.modal_choice != "go":
+					return
+			Net.set_phase("location")
+		4:
+			var miss4: Array = _mp_missing("location")
+			if not miss4.is_empty():
+				# 给房主一条退路：即使有人没勾也能继续（不勾的人不进随机池），免得整局卡住
+				Net.show_modal("%s\n\n地点扩展可以不选，不选的人不会进入随机池（不足 6 张时会从全部地点补足）。" % "\n".join(miss4),
+					[{"key": "go", "label": "仍然开始"}, {"key": "back", "label": "返回检查"}])
+				if await Net.modal_choice != "go":
+					return
+			_on_start()
+
+## 列出"还没做某项选择"的玩家（返回形如 "「小号」（P2）未选择英雄"）
+func _mp_missing(kind: String) -> Array:
+	var out: Array = []
+	var what := "英雄"
+	if kind == "villain":
+		what = "反派"
+	elif kind == "location":
+		what = "地点扩展"
+	for i in range(Net.seats.size()):
+		var s: Variant = Net.seats[i]
+		if s == null:
+			continue
+		var done := false
+		match kind:
+			"hero":
+				done = String(s.get("hero", "")) != ""
+			"villain":
+				done = String(s.get("villain", "")) != ""
+			"location":
+				done = (s.get("locs", []) as Array).size() > 0
+		if not done:
+			# 把"主机这边实际收到的内容"一起显示：一眼看出是数据没到、还是界面显示在骗人
+			var seen := ""
+			match kind:
+				"hero":
+					seen = String(s.get("hero", ""))
+				"villain":
+					seen = String(s.get("villain", ""))
+				"location":
+					seen = str(s.get("locs", []))
+			out.append("「%s」（P%d）未选择%s　[主机收到：%s]" % [String(s.get("name", "")), i + 1, what, seen if seen != "" else "空"])
+	return out
+
+## 反派页：给"队友选了"的卡打标签（自己选的那张已经是彩框了）
+func _mp_tag_villains() -> void:
+	var marks := {}
+	var mine := Net.my_seat()
+	for i in range(Net.seats.size()):
+		var s: Variant = Net.seats[i]
+		if s == null or i == mine:
+			continue
+		var v := String(s.get("villain", ""))
+		if v != "":
+			marks[v] = true
+	for vid in _villain_buttons:
+		_mp_set_tag(_villain_buttons[vid], "队友已选" if marks.has(String(vid)) else "")
+
+## 地点页：给"队友勾了"的扩展行打标签
+func _mp_tag_locs() -> void:
+	var marks := {}
+	var mine := Net.my_seat()
+	for i in range(Net.seats.size()):
+		var s: Variant = Net.seats[i]
+		if s == null or i == mine:
+			continue
+		for l in (s.get("locs", []) as Array):
+			marks[String(l)] = true
+	for e in _loc_rows:
+		var cb: Node = _loc_rows[e]
+		var row: Node = cb.get_parent() if cb != null else null
+		if row is Control:
+			_mp_set_tag(row, "队友已勾选" if marks.has(String(e)) else "")
+
+func _mp_set_tag(box: Control, text: String) -> void:
+	if box == null:
+		return
+	# 只保留一个标签：多余的（包括上一帧 queue_free 还没释放的、或重名被引擎改名的）全部清掉，
+	# 否则反复刷新会叠出一堆"队友已选"（bug3：切换反派时标签翻倍）
+	var keep: Label = null
+	for c in box.get_children():
+		if not String(c.name).begins_with("_mp_tag"):
+			continue
+		if keep == null:
+			keep = c as Label
+		else:
+			box.remove_child(c)
+			c.free()
+	if text == "":
+		if keep != null:
+			keep.visible = false
+		return
+	if keep == null:
+		keep = UiKit.label("", 14, Color(1, 0.9, 0.4))
+		keep.name = "_mp_tag"
+		keep.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+		keep.add_theme_constant_override("outline_size", 4)
+		keep.position = Vector2(4, 2)
+		keep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_child(keep)
+	keep.text = text
+	keep.visible = true
+
+## 收到"开始游戏"：所有端都进棋盘（主机由 Board 自动开始第一个反派回合）
