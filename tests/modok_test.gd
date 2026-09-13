@@ -386,8 +386,13 @@ func _ready() -> void:
 	var with_mt: int = _facedown_count()
 	_check("④b③ 两张意识转移 + 3 张带 BAM 威胁卡同场：额外只多翻 2 张（不是每张威胁卡各 2 张）",
 		with_mt - base_flips == 2, "无意识转移=%d 有意识转移=%d 差值=%d" % [base_flips, with_mt, with_mt - base_flips])
-	_check("④b③ 一次 BAM！总共最多 3 张（1 面板 + 2 额外）",
-		with_mt <= 3, "有意识转移时翻面=%d" % with_mt)
+	# 注意：这个场景的绝对翻面数不是 3 —— 「活体激光」在该地点没有英雄时**自己**就会翻 1 张
+	# （卡面规则），所以基线 = 1（面板）+ 1（活体激光）= 2，再加意识转移的 2 张 = 4。
+	# 因此"一次 BAM！最多 3 张"只在**没有别的翻面来源**时成立（见 ④ 组：面板 1 + 2 = 3）；
+	# 这里检验的是"额外翻面恒等于面朝上的意识转移张数"，即上面的差值断言。
+	_check("④b③ 额外翻面数恰好 = 面朝上的意识转移张数（2），不按威胁卡张数叠加",
+		with_mt - base_flips == 2 and base_flips >= 1,
+		"基线=%d 有意识转移=%d 额外=%d" % [base_flips, with_mt, with_mt - base_flips])
 
 	# ④ 意识转移「在场但面朝下」→ 视为空白、不额外翻
 	_prep([5, 5, 5])
