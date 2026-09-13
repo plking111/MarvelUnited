@@ -72,6 +72,11 @@ $code = $LASTEXITCODE
 $sw.Stop()
 if ($code -ne 0) { Write-Host ('ISCC 失败，退出码 ' + $code); exit $code }
 
+# 记录本次打包用的 pck 指纹（验收脚本据此判断安装包内容是否与当前 pck 一致）
+$pckHash = (Get-FileHash $pck -Algorithm SHA256).Hash
+$recPath = Join-Path $build '_打包记录.txt'
+[System.IO.File]::WriteAllText($recPath, ($pckHash + '  ' + [string](Get-Item $pck).Length), (New-Object System.Text.UTF8Encoding $false))
+Write-Host ('已记录 pck 指纹: ' + $pckHash.Substring(0,16) + '... → ' + $recPath)
 $outFile = Join-Path $outDir ($outBase + '.exe')
 if (Test-Path $outFile) {
   $o = Get-Item $outFile

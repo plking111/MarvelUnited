@@ -102,7 +102,17 @@ if (Test-Path $iss) {
   if (Test-Path $inst) {
     $o = Get-Item $inst
     Write-Host ('  版本 v' + $ver + ' → ' + $o.Name + '  ' + [int]($o.Length / 1MB) + ' MB  ' + $o.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss'))
-    if (Test-Path $pck) { Say ($o.LastWriteTime -ge (Get-Item $pck).LastWriteTime) '安装包比 pck 新' }
+    $rec = Join-Path $proj 'build\_打包记录.txt'
+    if (Test-Path $pck) {
+      if (Test-Path $rec) {
+        # 打包时记录过 pck 指纹 → 直接比内容（比时间戳更可靠：重新导出可能产生字节相同的 pck）
+        $recHash = ([System.IO.File]::ReadAllText($rec, [System.Text.Encoding]::UTF8) -split '\s+')[0]
+        $curHash = (Get-FileHash $pck -Algorithm SHA256).Hash
+        Say ($recHash -eq $curHash) ('安装包内容与当前 pck 一致（打包时指纹 ' + $recHash.Substring(0,16) + '…）')
+      } else {
+        Say ($o.LastWriteTime -ge (Get-Item $pck).LastWriteTime) '安装包比 pck 新'
+      }
+    }
   } else { Say $false ('还没生成安装包：' + $inst) }
 } else { Say $false '找不到 installer.iss' }
 

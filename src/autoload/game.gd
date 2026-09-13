@@ -1613,6 +1613,7 @@ func _run_villain_turn(extra_only: bool = false) -> void:
 		if card.get("bam", false) and not _bam_cancelled:
 			await _trigger_panel_bam()
 			await _trigger_all_threat_bam()
+			await _bam_resolved_hook()
 			Events.emit_state_changed()
 			await _step_pause()
 			if _check_lose():
@@ -1824,6 +1825,15 @@ func _trigger_full_bam() -> void:
 		return
 	await _trigger_all_threat_bam()
 
+	await _bam_resolved_hook()
+
+## 整次 BAM！结算（反派面板 BAM + 场上所有威胁卡的 BAM）走完之后的钩子，
+## 交给 VillainRules 按反派分发（摩多克「意识转移」用）：用户裁定"每次 BAM！只额外结算一次"，
+## 故事情节里有 k 张正面朝上的「意识转移」就额外翻 k 张 → 一次 BAM！总共最多 1 + 2 = 3 张。
+func _bam_resolved_hook() -> void:
+	if state["phase"] == "game_over":
+		return
+	await VillainRules.on_bam_resolved(self, state["villain"])
 func _trigger_all_threat_bam() -> void:
 	_begin_overflow_event()
 	# 每轮开始重置所有威胁卡的 BAM 执行标记（避免猎人克莱文移动后在新地点被再次触发，导致 BAM 执行两次）

@@ -1,4 +1,4 @@
-; 漫威联合 安装脚本 (Inno Setup)
+﻿; 漫威联合 安装脚本 (Inno Setup)
 #define MyAppName "漫威联合"
 #define MyAppVersion "3.10"
 #define MyAppExeName "MarvelUnited.exe"
@@ -13,7 +13,8 @@ DisableDirPage=no
 DisableProgramGroupPage=yes
 OutputDir=F:\桌游相关\漫威联合\电子游戏
 OutputBaseFilename=漫威联合安装程序_v3.10
-Compression=lzma2/ultra64
+Compression=lzma2/fast
+; 说明：内容里大部分是已压缩的 PNG，ultra64 只是白烧 CPU（实测 957MB 要 7 分钟），fast 约 1-2 分钟出包、体积略大
 SolidCompression=yes
 WizardStyle=modern
 ArchitecturesInstallIn64BitMode=x64compatible

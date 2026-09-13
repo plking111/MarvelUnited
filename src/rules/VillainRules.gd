@@ -1553,13 +1553,25 @@ static func _modok_mind_transfer_after_bam(game: Node, why: String) -> void:
 ## BAM！：翻转 1 张英雄卡。
 ## 追加（行动卡 10/11「意识转移」）：只要它在故事情节中正面朝上，BAM！之后再翻转 1 张英雄卡
 ## （面板 BAM 与威胁卡 BAM 都会触发，见 _modok_mind_transfer_after_bam）。
+
+
+## 一次 BAM！结算（面板 + 场上所有威胁卡）全部走完之后的钩子。
+## 用户裁定（2026-09-13）：「意识转移」的额外翻面**每次 BAM！只结算一次** ——
+## 故事情节里有 k 张正面朝上的「意识转移」就额外翻 k 张（k ≤ 2），
+## 所以一次 BAM！最多共翻 1（摩多克自己的 BAM）+ 2 = 3 张英雄行动卡。
+## 触发点由 Game._bam_resolved_hook() 在"整次 BAM 结算结束"时调用一次（不是每张威胁卡各触发一次）。
+static func on_bam_resolved(game: Node, vid: String) -> void:
+	match vid:
+		"modok":
+			await _modok_mind_transfer_after_bam(game, "BAM！结算结束")
+		_:
+			pass
 static func _modok_bam(game: Node) -> void:
 	var vpos: int = _vpos(game)
 	game._log("摩多克 BAM：翻转 1 张英雄卡（%s）" % game._loc_name(vpos), Color(1, 0.6, 0.4))
 	_modok_flip_hero_cards(game, 1, "摩多克 BAM")
 	if game.state["phase"] == "game_over":
 		return
-	_modok_mind_transfer_after_bam(game, "摩多克面板 BAM")
 	Events.emit_state_changed()
 
 
@@ -1677,7 +1689,6 @@ static func _modok_threat_bam(game: Node, tname: String, loc: int) -> void:
 	# 用户裁定：威胁卡的 BAM！也要触发「意识转移」（面板 BAM 那一份在 _modok_bam 里处理）。
 	# 统一走同一个结算点（叠加口径、日志、状态刷新都只有一处实现，避免两条分支各自漂移）。
 	if game.state["phase"] != "game_over":
-		_modok_mind_transfer_after_bam(game, "威胁卡 BAM（%s）" % tname)
 	Events.emit_state_changed()
 
 
