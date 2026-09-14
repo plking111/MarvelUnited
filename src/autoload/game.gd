@@ -2538,7 +2538,7 @@ func _play_forced_face_down(hid: String, hand_idx: int) -> void:
 	h["discard"].append(card_idx)
 	var prev_syms: Array = []
 	if not state.get("no_prev_symbols", false):
-		prev_syms = _last_hero_card_symbols()   # 仍继承故事区上一张英雄卡的符号加成
+		prev_syms = _last_hero_card_symbols(false)   # 仍继承故事区上一张英雄卡的符号加成
 	state["story"].append({"type": "hero", "hero": hid, "idx": card_idx, "face_down": true})
 	state["hero_cards_played"] += 1
 	state["action_symbols"] = prev_syms.duplicate()
@@ -2672,7 +2672,7 @@ func play_card_face_down(hand_idx: int) -> void:
 	# 先记录"上一张英雄牌"的符号（背面卡自身无效果，但仍继承上张牌的符号）
 	var prev_syms: Array = []
 	if not state.get("no_prev_symbols", false):
-		prev_syms = _last_hero_card_symbols()
+		prev_syms = _last_hero_card_symbols(false)
 	state["story"].append({"type": "hero", "hero": hid, "idx": card_idx, "face_down": true})
 	state["hero_cards_played"] += 1
 	h["distrust"] = 0
@@ -2768,8 +2768,10 @@ func _traitor_pick_rows(top: Array) -> Array:
 		rows.append({"img": img, "hide_text": false, "text": villain_action_desc(idx)})
 	return rows
 
-func _last_hero_card_symbols() -> Array:
-	for i in range(state["story"].size() - 2, -1, -1):
+func _last_hero_card_symbols(skip_last: bool = true) -> Array:
+	# 正常出牌时"刚打出的那张"已经入栈，所以要跳过最后一条；背面出牌是在入栈**之前**调用的，须传 false
+	var start: int = state["story"].size() - (2 if skip_last else 1)
+	for i in range(start, -1, -1):
 		var entry: Dictionary = state["story"][i]
 		if entry["type"] == "hero":
 			# 面朝下的英雄行动牌不给行动（下一名英雄无法获得其符号）
@@ -2778,9 +2780,6 @@ func _last_hero_card_symbols() -> Array:
 			# 泽莫男爵（裁定①）：被危机指示物盖住的符号永久失效 → 下一位英雄不能继承
 			return _entry_uncovered_symbols(entry)
 	return []
-
-## 可用符号（含行动指示物，token_ 前缀表示消耗指示物）
-## 神盾局模式：指示物共享给玩家（任意英雄都能用）
 func available_symbols() -> Array:
 	var hid: String = state["hero_ids"][state["current_hero"]]
 	var h: Dictionary = state["heroes"][hid]
@@ -3363,8 +3362,9 @@ func _s6_activate(vid: String, move_n: int, slot: int, card: Dictionary) -> void
 		_s6_place_indicators(loc, kind, 1)
 
 ## 在指定地点放 1 个指示物（放不下 → 邪恶六人组溢出规则：抽 1 张行动卡面朝下入故事情节）
-func _s6_place_indicators(loc: int, kind: String, count: int) -> void:
-	_begin_overflow_event()
+func _s6_place_indicators(loc: int, kind: String, count: int, new_event: bool = true) -> void:
+	if new_event:
+		_begin_overflow_event()
 	for i in range(count):
 		var l: Dictionary = state["locations"][loc]
 		var slots_total: int = int(DB.location(l["id"])["slots"])
@@ -3373,6 +3373,13 @@ func _s6_place_indicators(loc: int, kind: String, count: int) -> void:
 			else: l["civ"] += 1
 			_log("🕸 在 %s 放置 1 个%s" % [_loc_name(loc), "暴徒" if kind == "thug" else "平民"], Color(0.9, 0.9, 0.9))
 		else:
+			# 用户裁定（2026-09-13）：一次放置结算（如"秃鹫把身上的指示物丢到地点"）里
+			# 无论几个指示物放不下，溢出效果**只结算一次** —— 与基础规则/摩多克卡 5 同一口径。
+			if bool(_overflow_event_locs.get(-1, false)):
+				_log("溢出：本次结算已结算过溢出，不再重复（%s 放不下）" % _loc_name(loc), Color(0.8, 0.8, 0.8))
+				Events.emit_state_changed()
+				return
+			_overflow_event_locs[-1] = true
 			_s6_add_face_down_card("溢出（%s 放不下指示物）" % _loc_name(loc))
 			Events.emit_state_changed()
 			return
@@ -3508,10 +3515,11 @@ func _s6_damage_villain(vid: String, dmg: int, hid: String) -> void:
 		v["held_civ"] = 0
 		v["held_thug"] = 0
 		_log("🦅 秃鹫身上有 %d 民 / %d 暴：忽略本回合的全部伤害，并把指示物丢到 %s（会引发溢出）" % [c, t, _loc_name(loc)], Color(1, 0.8, 0.4))
+		_begin_overflow_event()   # 整次"把身上的指示物丢到地点"算一次放置结算：无论几个放不下，溢出只结算一次
 		for i in range(c):
-			_s6_place_indicators(loc, "civ", 1)
+			_s6_place_indicators(loc, "civ", 1, false)
 		for i in range(t):
-			_s6_place_indicators(loc, "thug", 1)
+			_s6_place_indicators(loc, "thug", 1, false)
 		Events.emit_state_changed()
 		return
 	v["hp"] = int(v["hp"]) - dmg

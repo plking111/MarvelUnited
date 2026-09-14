@@ -596,8 +596,8 @@ func _ready() -> void:
 	_check("⑧i 心灵异能：在该地点开始回合 → 标记本回合必须面朝下出牌",
 		String(Game.state["forced_face_down_hero"]) == "cap", "%s" % Game.state["forced_face_down_hero"])
 	var story_before: int = Game.state["story"].size()
-	# 继承符号 = _last_hero_card_symbols() = story[size-2] = ironman idx0（最后一张被当作"刚打出的"）
-	var prev_expected: Array = DB.hero_cards("ironman")[0]["symbols"]
+	# 继承符号 = 故事情节上一张英雄卡（背面出牌是入栈前调用，所以是 story[size-1] = hulk idx1）
+	var prev_expected: Array = DB.hero_cards("hulk")[1]["symbols"]
 	# 从手牌里挑一张"自身符号与继承符号不同"的卡，才能证明面朝下不会拿到自己卡上的行动
 	var cap_hand0: Array = Game.state["heroes"]["cap"]["hand"]
 	var pick_i := 0

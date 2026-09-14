@@ -371,7 +371,7 @@ func _ready() -> void:
 	_check("⑤ 身上有危机指示物的英雄，本回合被要求面朝下出牌",
 		String(Game.state["forced_face_down_hero"]) == "cap", "%s" % Game.state["forced_face_down_hero"])
 	var story_before: int = Game.state["story"].size()
-	var prev_expected: Array = DB.hero_cards("ironman")[0]["symbols"]
+	var prev_expected: Array = DB.hero_cards("hulk")[1]["symbols"]
 	var cap_hand0: Array = Game.state["heroes"]["cap"]["hand"]
 	var pick_i := 0
 	for hi in range(cap_hand0.size()):
